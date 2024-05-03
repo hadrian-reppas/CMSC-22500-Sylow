@@ -92,7 +92,8 @@ def UpperTriangularₙₚ (n : ℕ) (p : ℕ) : Subgroup (GLₙFₚ n p) :=
 instance : Fintype (UpperTriangularₙₚ n p) := sorry
 instance : Fintype (GLₙFₚ  n p) := sorry
 
+
 -- I think these are the right sizes
 -- See https://leanprover-community.github.io/mathlib4_docs/Mathlib/GroupTheory/Coset.html#Subgroup.card_subgroup_dvd_card
 lemma UT_card : Fintype.card (UpperTriangularₙₚ n p) = p ^ (n * (n - 1) / 2) := sorry
-lemma GL_card : Fintype.card (GLₙFₚ n p) = Finset.sum (Finset.range n) (λ i ↦ p^n - p^i) := sorry
+lemma GL_card : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p^n - p^i) := sorry
