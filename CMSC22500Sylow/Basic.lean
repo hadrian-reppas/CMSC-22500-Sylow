@@ -20,7 +20,19 @@ lemma ut_mul_zeros {n : ℕ+} {p : ℕ} [Fact p.Prime] {a b : GLₙFₚ n p}
     if hki : k < i then by simp [ha.left i k hki]
     else by simp [hb.left k j (lt_of_lt_of_le h (not_lt.mp hki))])
 
-lemma ne_lt_or_ge {n : ℕ+} {a b : Fin n.val} (h : a ≠ b) : a < b ∨ a > b := sorry
+lemma ne_lt_or_ge {n : ℕ+} {a b : Fin n.val} (h : a ≠ b) : a < b ∨ a > b :=
+  match le_or_gt a b with
+  | .inl h₁ => match lt_or_eq_of_le h₁ with
+    | .inl h₂ => .inl h₂
+    | .inr h₂ => absurd h₂ h
+  | .inr h₁ => .inr h₁
+
+lemma ne_prod_0 {n : ℕ+} {p : ℕ} {i j : Fin n} [Fact p.Prime] {a b : GLₙFₚ n p}
+  (ha : IsUpperTriangular a) (hb : IsUpperTriangular b) (h : j ≠ i)
+   : (a.val i j) * (b.val j i) = 0 :=
+    match ne_lt_or_ge h with
+    | .inl h => by simp [ha.left i j h]
+    | .inr h => by simp [hb.left j i h]
 
 -- The product of two ut matrices has ones on the diagonal
 lemma ut_mul_ones {n : ℕ+} {p : ℕ} [Fact p.Prime] {a b : GLₙFₚ n p}
@@ -29,10 +41,7 @@ lemma ut_mul_ones {n : ℕ+} {p : ℕ} [Fact p.Prime] {a b : GLₙFₚ n p}
       Matrix.dotProduct,
       Finset.sum_eq_single_of_mem i
         (Finset.mem_univ i)
-        ((λ j _ h ↦ match ne_lt_or_ge h with
-          | .inl h₁ => by simp [ha.left i j h₁]
-          | .inr h₁ => by simp [hb.left j i h₁])
-        : ∀ j ∈ Finset.univ, j ≠ i → (a.val i j) * (b.val j i) = 0),
+        (λ _ _ h ↦ ne_prod_0 ha hb h),
       ha.right i, hb.right i
     ]
 
