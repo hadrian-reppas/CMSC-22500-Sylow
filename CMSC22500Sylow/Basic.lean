@@ -1,6 +1,7 @@
 import Mathlib.Data.Nat.Prime
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup
 import Mathlib.RingTheory.LittleWedderburn
+import Mathlib.Init.Order.Defs
 
 def GLₙFₚ (n : ℕ+) (p : ℕ) [Fact p.Prime] := GL (Fin n.val) (ZMod p)
 
@@ -13,10 +14,10 @@ def IsUpperTriangular {n : ℕ+} {p : ℕ} [Fact p.Prime] (M : GLₙFₚ n p) : 
 
 lemma ut_mul_zeros {n : ℕ+} {p : ℕ} [Fact p.Prime] {a b : GLₙFₚ n p}
   (ha : IsUpperTriangular a) (hb : IsUpperTriangular b) (i j : Fin n) (h : j < i)
-   : Matrix.dotProduct (λ k ↦ a.val i k) (λ k ↦ b.val k j) = 0 := sorry
-  -- When k < i, the lhs of the multiplication is zero
-  -- When k ≥ i → j < k, the rhs of the multiplication is zero
-  --  → We are summing a bunch of zeros, so we get zero
+   : (Matrix.dotProduct (λ k ↦ a.val i k) (λ k ↦ b.val k j)) = 0 :=
+  Finset.sum_eq_zero (λ k _ ↦
+    if hki : k < i then by simp [ha.left i k hki]
+    else by simp [hb.left k j (lt_of_lt_of_le h (not_lt.mp hki))])
 
 lemma ut_mul_ones {n : ℕ+} {p : ℕ} [Fact p.Prime] {a b : GLₙFₚ n p}
   (ha : IsUpperTriangular a) (hb : IsUpperTriangular b) (i : Fin n)
