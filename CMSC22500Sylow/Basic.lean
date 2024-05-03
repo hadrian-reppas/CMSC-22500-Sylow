@@ -20,14 +20,21 @@ lemma ut_mul_zeros {n : ℕ+} {p : ℕ} [Fact p.Prime] {a b : GLₙFₚ n p}
     if hki : k < i then by simp [ha.left i k hki]
     else by simp [hb.left k j (lt_of_lt_of_le h (not_lt.mp hki))])
 
+lemma ne_lt_or_ge {n : ℕ+} {a b : Fin n.val} (h : a ≠ b) : a < b ∨ a > b := sorry
+
 -- The product of two ut matrices has ones on the diagonal
 lemma ut_mul_ones {n : ℕ+} {p : ℕ} [Fact p.Prime] {a b : GLₙFₚ n p}
   (ha : IsUpperTriangular a) (hb : IsUpperTriangular b) (i : Fin n)
-   : Matrix.dotProduct (λ k ↦ a.val i k) (λ k ↦ b.val k i) = 1 := sorry
-  -- When k < i, the lhs of the multiplication is zero
-  -- When k > i, the rhs of the multiplication is zero
-  -- When k = i, both sides of the multiplication are one
-  --  → We are summing a bunch of zeros and a single one, so we get one
+   : Matrix.dotProduct (λ k ↦ a.val i k) (λ k ↦ b.val k i) = 1 := by simp [
+      Matrix.dotProduct,
+      Finset.sum_eq_single_of_mem i
+        (Finset.mem_univ i)
+        ((λ j _ h ↦ match ne_lt_or_ge h with
+          | .inl h₁ => by simp [ha.left i j h₁]
+          | .inr h₁ => by simp [hb.left j i h₁])
+        : ∀ j ∈ Finset.univ, j ≠ i → (a.val i j) * (b.val j i) = 0),
+      ha.right i, hb.right i
+    ]
 
 -- The inverse of an ut matrix has zeros under the diagonal
 lemma ut_inv_zeros {n : ℕ+} {p : ℕ} [Fact p.Prime] {x : GLₙFₚ n p}
