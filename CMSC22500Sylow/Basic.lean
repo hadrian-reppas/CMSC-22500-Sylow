@@ -89,11 +89,12 @@ def UpperTriangularₙₚ (n : ℕ) (p : ℕ) : Subgroup (GLₙFₚ n p) :=
     inv_mem' := λ h ↦ ⟨ZUD_inv_ZUD h.left, λ _ ↦ UT_inv_ones h⟩
   }
 
-instance : Fintype (UpperTriangularₙₚ n p) := sorry
-instance : Fintype (GLₙFₚ  n p) := sorry
+instance [h : Fact (Prime p)] : NeZero p := ⟨Prime.ne_zero h.out⟩
+instance [Fact (Prime p)] : Fintype (GLₙFₚ n p) := instFintypeUnits
+noncomputable instance [Fact (Prime p)] : Fintype (UpperTriangularₙₚ n p) := Fintype.ofFinite (UpperTriangularₙₚ n p)
 
 
 -- I think these are the right sizes
 -- See https://leanprover-community.github.io/mathlib4_docs/Mathlib/GroupTheory/Coset.html#Subgroup.card_subgroup_dvd_card
-lemma UT_card : Fintype.card (UpperTriangularₙₚ n p) = p ^ (n * (n - 1) / 2) := sorry
-lemma GL_card : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p^n - p^i) := sorry
+lemma UT_card [Fact (Prime p)] : Fintype.card (UpperTriangularₙₚ n p) = p ^ (n * (n - 1) / 2) := sorry
+lemma GL_card [Fact (Prime p)] : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p^n - p^i) := sorry
