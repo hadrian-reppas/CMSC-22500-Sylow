@@ -103,20 +103,59 @@ lemma UT_card [Fact (Prime p)] : Fintype.card (UpperTriangularₙₚ n p) = p ^ 
 lemma GL_card [Fact (Prime p)] : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p^n - p^i) := sorry
 
 -- The injection from a permutation `σ : Equiv.Perm G` to a permutation matrix
--- We might not need to define this, Mathlib seems to have some stuff on permutation matrices:
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Data/Matrix/PEquiv.html#PEquiv.toPEquiv_mul_matrix
-def perm_to_matrix {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
-  (σ : Equiv.Perm G) : Matrix G G (ZMod p) := λ i j ↦ if σ i = j then 1 else 0
+def perm_mat {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
+  (σ : Equiv.Perm G) : Matrix G G (ZMod p) := λ i j ↦ if σ j = i then 1 else 0
 
--- A proof that `perm_to_matrix` is a homomorphism
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/Matrix/Determinant.html#Matrix.det_one
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/Matrix/Determinant.html#Matrix.det_permute
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/Matrix/Determinant.html#Matrix.det_permutation
-def perm_to_matrix_hom {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
+lemma mul_matrix_apply [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)] (σ : Equiv.Perm G) (M : Matrix G G (ZMod p))
+   : (perm_mat σ * M :) i j = M (σ⁻¹ i) j := by
+    dsimp [perm_mat, Matrix.mul_apply]
+    rw [Finset.sum_eq_single (σ⁻¹ i)]
+    · simp
+    · intros b _ h
+      have h₁ : σ b ≠ i := λ h₁ ↦ by
+        have h₂ : b = σ⁻¹ i := Equiv.Perm.eq_inv_iff_eq.mpr h₁
+        exact (h h₂).elim
+      simp
+      intro h₂
+      exact (h₁ h₂).elim
+    · intro h
+      exact (h (Finset.mem_univ (σ⁻¹ i))).elim
+
+-- The map `perm_mat` preserves multiplication
+lemma perm_mat_hom_proof [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)] (σ τ : Equiv.Perm G)
+   : perm_mat (σ * τ) = (perm_mat σ : Matrix G G (ZMod p)) * (perm_mat τ) := by
+    ext i j
+    rw [mul_matrix_apply]
+    dsimp [perm_mat]
+    have h : σ (τ j) = i ↔ τ j = σ⁻¹ i := by
+      apply Iff.intro
+      · intro h
+        exact Equiv.Perm.eq_inv_iff_eq.mpr h
+      · intro h
+        exact (Equiv.apply_eq_iff_eq_symm_apply σ).mpr h
+    refine ite_congr (propext h) (congrFun rfl) (congrFun rfl)
+
+-- The identity permutation maps to the identity matrix
+lemma perm_mat_1 [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)] : perm_mat 1 = (1 : Matrix G G (ZMod p)) := by
+  ext i j
+  unfold perm_mat
+  by_cases h : j = i
+  · simp [h]
+  · simp
+    symm
+    have h : (1 : Matrix G G (ZMod p)) i j = (1 : Matrix G G (ZMod p)) j i := by
+      by_cases h₁ : i = j
+      · exact (h h₁.symm).elim
+      · rw [Matrix.one_apply_ne h, Matrix.one_apply_ne h₁]
+    rw [h]
+    exact Matrix.one_apply
+
+-- A proof that `perm_mat` is a homomorphism
+def perm_mat_hom {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
    : MonoidHom (Equiv.Perm G) (Matrix G G (ZMod p)) := {
-  toFun := perm_to_matrix,
-  map_one' := sorry,
-  map_mul' := sorry,
+  toFun := perm_mat,
+  map_one' := perm_mat_1,
+  map_mul' := perm_mat_hom_proof,
 }
 
 -- We will have to map the `(Fin n) x (Fin n)` matrices to `G x G` matrices
