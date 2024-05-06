@@ -4,6 +4,8 @@ import Mathlib.RingTheory.LittleWedderburn
 import Mathlib.Init.Order.Defs
 import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.Algebra.BigOperators.Basic
+import Mathlib.GroupTheory.Perm.Subgroup
+import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 
 abbrev GLₙFₚ (n p : ℕ) := GL (Fin n) (ZMod p)
 
@@ -78,16 +80,15 @@ lemma UT_inv_ones {i : Fin n} (h : IsUpperTriangular M) : M.inv i i = 1 :=
   h₆
 
 -- The subgroup of upper triangular matrices
-def UpperTriangularₙₚ (n : ℕ) (p : ℕ) : Subgroup (GLₙFₚ n p) :=
-  {
-    carrier := IsUpperTriangular,
-    mul_mem' := λ ha hb ↦ ⟨UT_mul_zeros ha hb, UT_mul_ones ha hb⟩,
-    one_mem' := ⟨
-      λ _ _ h ↦ Matrix.one_apply_ne (Ne.symm (Fin.ne_of_lt h)),
-      Matrix.one_apply_eq
-    ⟩,
-    inv_mem' := λ h ↦ ⟨ZUD_inv_ZUD h.left, λ _ ↦ UT_inv_ones h⟩
-  }
+def UpperTriangularₙₚ (n p : ℕ) : Subgroup (GLₙFₚ n p) := {
+  carrier := IsUpperTriangular,
+  mul_mem' := λ ha hb ↦ ⟨UT_mul_zeros ha hb, UT_mul_ones ha hb⟩,
+  one_mem' := ⟨
+    λ _ _ h ↦ Matrix.one_apply_ne (Ne.symm (Fin.ne_of_lt h)),
+    Matrix.one_apply_eq
+  ⟩,
+  inv_mem' := λ h ↦ ⟨ZUD_inv_ZUD h.left, λ _ ↦ UT_inv_ones h⟩
+}
 
 instance [h : Fact (Prime p)] : NeZero p := ⟨Prime.ne_zero h.out⟩
 instance [Fact (Prime p)] : Fintype (GLₙFₚ n p) := instFintypeUnits
@@ -95,6 +96,18 @@ noncomputable instance [Fact (Prime p)] : Fintype (UpperTriangularₙₚ n p) :=
 
 
 -- I think these are the right sizes
--- See https://leanprover-community.github.io/mathlib4_docs/Mathlib/GroupTheory/Coset.html#Subgroup.card_subgroup_dvd_card
+-- https://leanprover-community.github.io/mathlib4_docs/Mathlib/GroupTheory/Coset.html#Subgroup.card_subgroup_dvd_card
+-- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Data/Fintype/Perm.html#Fintype.card_perm
 lemma UT_card [Fact (Prime p)] : Fintype.card (UpperTriangularₙₚ n p) = p ^ (n * (n - 1) / 2) := sorry
 lemma GL_card [Fact (Prime p)] : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p^n - p^i) := sorry
+
+-- The injection from a permutation `σ : Equiv.Perm G` to a permutation matrix
+def perm_to_matrix {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
+  (σ : Equiv.Perm G) : Matrix G G (ZMod p) := λ i j ↦ if σ i = j then 1 else 0
+
+-- A proof that `perm_to_matrix` is a homomorphism
+def perm_to_matrix_hom {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
+   : MulHom (Equiv.Perm G) (Matrix G G (ZMod p)) := {
+  toFun := perm_to_matrix,
+  map_mul' := sorry,
+}
