@@ -163,18 +163,44 @@ def perm_mat_hom {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime
 lemma perm_mat_det {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
   (σ : Equiv.Perm G) : (perm_mat σ).det ≠ (0 : ZMod p) := sorry
 
--- Permutation matrices are in `GLₙFₚ`
-lemma perm_mat_GLₙFₚ {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
-  (σ : Equiv.Perm G) : True /- TODO -/ := sorry
+-- Permutation matrices are invertible
+-- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/Matrix/NonsingularInverse.html#Matrix.invertibleOfIsUnitDet
+instance perm_mat_inv {G : Type u} [Group G] [h₁ : Fintype G] [h₂ : DecidableEq G] [Fact (Prime p)]
+  (σ : Equiv.Perm G) : Invertible (perm_mat σ : Matrix G G (ZMod p)) := sorry
 
---- If `G` had cardinality `n`, then we have a bijection between `G` and `Fin n`
-noncomputable def enumerate {G : Type u} [Fintype G] (h : Fintype.card G = n) : G ≃ Fin n :=
-  have h₁ : Fintype.card (Fin n) = n := Fintype.card_fin n
-  Classical.choice (Fintype.card_eq.mp (h.trans h₁.symm))
+
+/------------------------------------------
+-- Everything below here is kind of iffy --
+------------------------------------------/
+
+
+-- If `G` has cardinality `n`, then we have a bijection between `G` and `Fin n`
+noncomputable def enumerate (G : Type u) [Fintype G] : G ≃ Fin (Fintype.card G) :=
+  have h₁ := Fintype.card_fin (Fintype.card G)
+  Classical.choice (Fintype.card_eq.mp h₁.symm)
+
+-- Turn a matrix indexed by `G` into a matrix indexed by `Fin (Fintype.card G)`
+noncomputable def reindex {G : Type u} [Fintype G] (M : Matrix G G (ZMod p))
+   : Matrix (Fin (Fintype.card G)) (Fin (Fintype.card G)) (ZMod p) :=
+  Matrix.reindex (enumerate G) (enumerate G) M
+
+-- `reindex` is a homomorphism
+noncomputable def reindex_hom {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
+   : MonoidHom (Matrix G G (ZMod p)) (Matrix (Fin (Fintype.card G)) (Fin (Fintype.card G)) (ZMod p)) := {
+  toFun := reindex,
+  map_one' := sorry,
+  map_mul' := sorry,
+}
+
+-- Reindexed permutation matrices are invertible
+instance perm_mat_inv' {G : Type u} [Fintype G] [Group G] [DecidableEq G] [Fact (Prime p)] (σ : Equiv.Perm G)
+   : Invertible (reindex (perm_mat σ : Matrix  G G (ZMod p))) := sorry
 
 -- The injection from a permutation `σ : Equiv.Perm G` to a `Fin n`-indexed permutation matrix
-def perm_mat' {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
-  (σ : Equiv.Perm G) : GLₙFₚ (Fintype.card G) p := sorry
-
--- We will have to map the `(Fin n) x (Fin n)` matrices to `G x G` matrices
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Data/Matrix/Basic.html#Matrix.reindex
+noncomputable def perm_mat' {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
+  (σ : Equiv.Perm G) : GLₙFₚ (Fintype.card G) p := {
+    val := reindex (perm_mat σ),
+    inv := (reindex (perm_mat σ))⁻¹,
+    val_inv := Matrix.mul_inv_of_invertible (reindex (perm_mat σ)),
+    inv_val := Matrix.inv_mul_of_invertible (reindex (perm_mat σ)),
+  }
