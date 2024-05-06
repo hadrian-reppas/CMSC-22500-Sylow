@@ -102,12 +102,21 @@ lemma UT_card [Fact (Prime p)] : Fintype.card (UpperTriangularₙₚ n p) = p ^ 
 lemma GL_card [Fact (Prime p)] : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p^n - p^i) := sorry
 
 -- The injection from a permutation `σ : Equiv.Perm G` to a permutation matrix
+-- We might not need to define this, Mathlib seems to have some stuff on permutation matrices:
+-- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Data/Matrix/PEquiv.html#PEquiv.toPEquiv_mul_matrix
 def perm_to_matrix {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
   (σ : Equiv.Perm G) : Matrix G G (ZMod p) := λ i j ↦ if σ i = j then 1 else 0
 
 -- A proof that `perm_to_matrix` is a homomorphism
+-- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/Matrix/Determinant.html#Matrix.det_one
+-- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/Matrix/Determinant.html#Matrix.det_permute
+-- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/Matrix/Determinant.html#Matrix.det_permutation
 def perm_to_matrix_hom {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
-   : MulHom (Equiv.Perm G) (Matrix G G (ZMod p)) := {
+   : MonoidHom (Equiv.Perm G) (Matrix G G (ZMod p)) := {
   toFun := perm_to_matrix,
+  map_one' := sorry,
   map_mul' := sorry,
 }
+
+-- We will have to map the `(Fin n) x (Fin n)` matrices to `G x G` matrices
+-- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Data/Matrix/Basic.html#Matrix.reindex
