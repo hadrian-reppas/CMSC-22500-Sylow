@@ -169,9 +169,11 @@ instance perm_mat_inv {G : Type u} [Group G] [h₁ : Fintype G] [h₂ : Decidabl
   (σ : Equiv.Perm G) : Invertible (perm_mat σ : Matrix G G (ZMod p)) := sorry
 
 
-/------------------------------------------
+/-
+-------------------------------------------
 -- Everything below here is kind of iffy --
-------------------------------------------/
+-------------------------------------------
+-/
 
 
 -- If `G` has cardinality `n`, then we have a bijection between `G` and `Fin n`
