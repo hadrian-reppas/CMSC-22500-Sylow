@@ -150,13 +150,31 @@ lemma perm_mat_1 [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)] : perm_m
     rw [h]
     exact Matrix.one_apply
 
--- A proof that `perm_mat` is a homomorphism
+-- `perm_mat` is a homomorphism
 def perm_mat_hom {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
    : MonoidHom (Equiv.Perm G) (Matrix G G (ZMod p)) := {
   toFun := perm_mat,
   map_one' := perm_mat_1,
   map_mul' := perm_mat_hom_proof,
 }
+
+-- The determinant of a permutation matrix is nonzero
+-- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/Matrix/Determinant.html#Matrix.det_permutation
+lemma perm_mat_det {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
+  (σ : Equiv.Perm G) : (perm_mat σ).det ≠ (0 : ZMod p) := sorry
+
+-- Permutation matrices are in `GLₙFₚ`
+lemma perm_mat_GLₙFₚ {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
+  (σ : Equiv.Perm G) : True /- TODO -/ := sorry
+
+--- If `G` had cardinality `n`, then we have a bijection between `G` and `Fin n`
+noncomputable def enumerate {G : Type u} [Fintype G] (h : Fintype.card G = n) : G ≃ Fin n :=
+  have h₁ : Fintype.card (Fin n) = n := Fintype.card_fin n
+  Classical.choice (Fintype.card_eq.mp (h.trans h₁.symm))
+
+-- The injection from a permutation `σ : Equiv.Perm G` to a `Fin n`-indexed permutation matrix
+def perm_mat' {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
+  (σ : Equiv.Perm G) : GLₙFₚ (Fintype.card G) p := sorry
 
 -- We will have to map the `(Fin n) x (Fin n)` matrices to `G x G` matrices
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Data/Matrix/Basic.html#Matrix.reindex
