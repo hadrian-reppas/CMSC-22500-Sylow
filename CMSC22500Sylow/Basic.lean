@@ -168,14 +168,6 @@ lemma perm_mat_det {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Pri
 instance perm_mat_inv {G : Type u} [Group G] [h₁ : Fintype G] [h₂ : DecidableEq G] [Fact (Prime p)]
   (σ : Equiv.Perm G) : Invertible (perm_mat σ : Matrix G G (ZMod p)) := sorry
 
-
-/-
--------------------------------------------
--- Everything below here is kind of iffy --
--------------------------------------------
--/
-
-
 -- If `G` has cardinality `n`, then we have a bijection between `G` and `Fin n`
 noncomputable def enumerate (G : Type u) [Fintype G] : G ≃ Fin (Fintype.card G) :=
   have h₁ := Fintype.card_fin (Fintype.card G)
@@ -206,7 +198,7 @@ lemma reindex_1 {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime 
 
 lemma reindex_mul {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
   (M N : Matrix G G (ZMod p)) : reindex (M * N) = reindex M * reindex N := by
-    ext i' j'
+    ext i₀ j₀
     rw [Matrix.mul_apply, reindex, Matrix.reindex]
     simp
     let f := (enumerate G).symm
@@ -217,7 +209,7 @@ lemma reindex_mul {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prim
     rw [reindex, Matrix.reindex]
     simp
     rw [hf]
-    admit -- Function.Bijective.sum_comp
+    exact (Equiv.sum_comp f (λ j ↦ M (f i₀) j * N j (f j₀))).symm
 
 -- `reindex` is a homomorphism
 noncomputable def reindex_hom {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
@@ -227,13 +219,17 @@ noncomputable def reindex_hom {G : Type u} [Group G] [Fintype G] [DecidableEq G]
   map_mul' := reindex_mul,
 }
 
+-- We can compose the two homomorphisms
 noncomputable def perm_mat_reindexed {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
    : MonoidHom (Equiv.Perm G) (Matrix (Fin (Fintype.card G)) (Fin (Fintype.card G)) (ZMod p)) := MonoidHom.comp reindex_hom perm_mat_hom
 
 -- Reindexed permutation matrices are invertible
--- Maybe we get this from the fact that the image of a homomorphism is a group?
-instance perm_mat_inv' {G : Type u} [Fintype G] [Group G] [DecidableEq G] [Fact (Prime p)] (σ : Equiv.Perm G)
-   : Invertible (perm_mat_reindexed σ : Matrix (Fin (Fintype.card G)) (Fin (Fintype.card G)) (ZMod p)) := sorry
+noncomputable instance perm_mat_inv' {G : Type u} [Fintype G] [Group G] [DecidableEq G] [Fact (Prime p)] (σ : Equiv.Perm G)
+   : Invertible (perm_mat_reindexed σ : Matrix (Fin (Fintype.card G)) (Fin (Fintype.card G)) (ZMod p)) := {
+    invOf := perm_mat_reindexed σ⁻¹,
+    invOf_mul_self := MonoidHom.toHomUnits.proof_2 (perm_mat_reindexed : MonoidHom (Equiv.Perm G) (Matrix (Fin (Fintype.card G)) (Fin (Fintype.card G)) (ZMod p))) σ,
+    mul_invOf_self := MonoidHom.toHomUnits.proof_1 (perm_mat_reindexed : MonoidHom (Equiv.Perm G) (Matrix (Fin (Fintype.card G)) (Fin (Fintype.card G)) (ZMod p))) σ,
+  }
 
 -- The injection from a permutation `σ : Equiv.Perm G` to a `Fin n`-indexed permutation matrix
 noncomputable def perm_mat' {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
