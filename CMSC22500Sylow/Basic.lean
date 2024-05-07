@@ -217,10 +217,7 @@ lemma reindex_mul {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prim
     rw [reindex, Matrix.reindex]
     simp
     rw [hf]
-    apply Function.Bijective.sum_comp
-    · admit
-    · admit
-    · admit
+    admit -- Function.Bijective.sum_comp
 
 -- `reindex` is a homomorphism
 noncomputable def reindex_hom {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
