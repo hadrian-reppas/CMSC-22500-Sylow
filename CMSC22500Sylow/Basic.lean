@@ -89,18 +89,8 @@ def UpperTriangularₙₚ (n p : ℕ) : Subgroup (GLₙFₚ n p) := {
   inv_mem' := λ h ↦ ⟨ZUD_inv_ZUD h.left, λ _ ↦ UT_inv_ones h⟩
 }
 
-instance [h : Fact p.Prime] : NeZero p := ⟨Nat.Prime.ne_zero h.out⟩
-instance [Fact p.Prime] : Fintype (GLₙFₚ n p) := instFintypeUnits
-noncomputable instance [Fact p.Prime] : Fintype (UpperTriangularₙₚ n p) := Fintype.ofFinite (UpperTriangularₙₚ n p)
-
--- I think these are the right sizes
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/GroupTheory/Coset.html#Subgroup.card_subgroup_dvd_card
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Data/Fintype/Perm.html#Fintype.card_perm
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/LinearIndependent.html
-lemma UT_card [Fact p.Prime] : Fintype.card (UpperTriangularₙₚ n p) = p ^ (n * (n - 1) / 2) := sorry
-lemma GL_card [Fact p.Prime] : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p^n - p^i) := sorry
-
-variable {G : Type u} [Group G] [Fintype G] [DecidableEq G]
+universe u
+variable {G : Type u} [hg : Group G] [hft : Fintype G] [hdeq : DecidableEq G]
 
 -- The injection from a permutation `σ : Equiv.Perm G` to a permutation matrix
 def perm_mat₀ [Fact p.Prime] (σ : Equiv.Perm G) : Matrix G G (ZMod p) := λ i j ↦ if σ j = i then 1 else 0
@@ -154,12 +144,27 @@ def perm_mat₀_hom [Fact p.Prime] : MonoidHom (Equiv.Perm G) (Matrix G G (ZMod 
   map_mul' := perm_mat_hom_proof,
 }
 
+lemma perm_mat₀_cols [Fact p.Prime] (σ : Equiv.Perm G) : (1 : Matrix G G (ZMod p)).submatrix id σ = perm_mat₀ σ := by
+  ext i j
+  unfold Matrix.submatrix
+  unfold perm_mat₀
+  by_cases h : σ j = i <;> simp [h]
+  exact Matrix.one_apply_ne' h
+
 -- The determinant of a permutation matrix is nonzero
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/Matrix/Determinant.html#Matrix.det_permutation
-lemma perm_mat₀_det [Fact p.Prime] (σ : Equiv.Perm G) : (perm_mat₀ σ).det ≠ (0 : ZMod p) := sorry
+lemma perm_mat₀_det [hp : Fact p.Prime] (σ : Equiv.Perm G) : (perm_mat₀ σ).det ≠ (0 : ZMod p) := by
+  have h₁ : Matrix.det (1 : Matrix G G (ZMod p)) = 1 := Matrix.det_one
+  have h₂ := Matrix.det_permute' σ (1 : Matrix G G (ZMod p))
+  simp [h₁] at h₂
+  have h₃ : (1 : Matrix G G (ZMod p)).submatrix id σ = perm_mat₀ σ := perm_mat₀_cols σ
+  rw [h₃] at h₂
+  intro hf
+  rw [hf] at h₂
+  exact (Int.units_eq_one_or (Equiv.Perm.sign σ)).elim
+    (λ h ↦ by rw [h] at h₂; simp at h₂)
+    (λ h ↦ by rw [h] at h₂; simp at h₂)
 
 -- Permutation matrices are invertible
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/Matrix/NonsingularInverse.html#Matrix.invertibleOfIsUnitDet
 noncomputable instance perm_mat₀_inv [hp : Fact p.Prime] (σ : Equiv.Perm G) : Invertible (perm_mat₀ σ : Matrix G G (ZMod p)) := by
   apply Matrix.invertibleOfIsUnitDet
   exact Ne.isUnit (perm_mat₀_det σ)
@@ -250,3 +255,15 @@ noncomputable def perm_mat [Fact p.Prime] : MonoidHom (Equiv.Perm G) (GLₙFₚ 
 -- Next, we prove that `perm_mat` has trivial kernel, so it's injective
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Algebra/Group/Subgroup/Basic.html#AddMonoidHom.ker_eq_bot_iff
 -- Thus, `Equiv.Perm G` is isomorphic to a subgroup of `GLₙFₚ (Fintype.card G) p`
+
+
+instance [h : Fact p.Prime] : NeZero p := ⟨Nat.Prime.ne_zero h.out⟩
+instance [Fact p.Prime] : Fintype (GLₙFₚ n p) := instFintypeUnits
+noncomputable instance [Fact p.Prime] : Fintype (UpperTriangularₙₚ n p) := Fintype.ofFinite (UpperTriangularₙₚ n p)
+
+-- I think these are the right sizes
+-- https://leanprover-community.github.io/mathlib4_docs/Mathlib/GroupTheory/Coset.html#Subgroup.card_subgroup_dvd_card
+-- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Data/Fintype/Perm.html#Fintype.card_perm
+-- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/LinearIndependent.html
+lemma UT_card [Fact p.Prime] : Fintype.card (UpperTriangularₙₚ n p) = p ^ (n * (n - 1) / 2) := sorry
+lemma GL_card [Fact p.Prime] : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p^n - p^i) := sorry
