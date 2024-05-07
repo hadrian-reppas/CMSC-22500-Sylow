@@ -55,10 +55,9 @@ instance : Invertible M.val := Units.invertible M
 lemma ZUD_block_triangular (hM : ZerosUnderDiag M) : Matrix.BlockTriangular M.val id := hM
 
 -- The inverse of an ZUD matrix is a ZUD matrix
-lemma ZUD_inv_ZUD (h₁ : ZerosUnderDiag M) : ZerosUnderDiag M⁻¹ :=
-  λ i j h₂ ↦ by
-    simp [Matrix.coe_units_inv M]
-    exact (Matrix.blockTriangular_inv_of_blockTriangular (ZUD_block_triangular h₁) h₂)
+lemma ZUD_inv_ZUD (h₁ : ZerosUnderDiag M) : ZerosUnderDiag M⁻¹ := λ i j h₂ ↦ by
+  simp [Matrix.coe_units_inv M]
+  exact (Matrix.blockTriangular_inv_of_blockTriangular (ZUD_block_triangular h₁) h₂)
 
 -- The inverse of an UT matrix has ones on the diagonal
 lemma UT_inv_ones {i : Fin n} (h : IsUpperTriangular M) : M.inv i i = 1 :=
@@ -94,7 +93,6 @@ instance [h : Fact (Prime p)] : NeZero p := ⟨Prime.ne_zero h.out⟩
 instance [Fact (Prime p)] : Fintype (GLₙFₚ n p) := instFintypeUnits
 noncomputable instance [Fact (Prime p)] : Fintype (UpperTriangularₙₚ n p) := Fintype.ofFinite (UpperTriangularₙₚ n p)
 
-
 -- I think these are the right sizes
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/GroupTheory/Coset.html#Subgroup.card_subgroup_dvd_card
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Data/Fintype/Perm.html#Fintype.card_perm
@@ -108,31 +106,31 @@ variable {G : Type u} [Group G] [Fintype G] [DecidableEq G]
 def perm_mat [Fact (Prime p)] (σ : Equiv.Perm G) : Matrix G G (ZMod p) := λ i j ↦ if σ j = i then 1 else 0
 
 lemma mul_matrix_apply [Fact (Prime p)] (σ : Equiv.Perm G) (M : Matrix G G (ZMod p)) : (perm_mat σ * M :) i j = M (σ⁻¹ i) j := by
-    dsimp [perm_mat, Matrix.mul_apply]
-    rw [Finset.sum_eq_single (σ⁻¹ i)]
-    · simp
-    · intros b _ h
-      have h₁ : σ b ≠ i := λ h₁ ↦ by
-        have h₂ : b = σ⁻¹ i := Equiv.Perm.eq_inv_iff_eq.mpr h₁
-        exact (h h₂).elim
-      simp
-      intro h₂
-      exact (h₁ h₂).elim
-    · intro h
-      exact (h (Finset.mem_univ (σ⁻¹ i))).elim
+  dsimp [perm_mat, Matrix.mul_apply]
+  rw [Finset.sum_eq_single (σ⁻¹ i)]
+  · simp
+  · intros b _ h
+    have h₁ : σ b ≠ i := λ h₁ ↦ by
+      have h₂ : b = σ⁻¹ i := Equiv.Perm.eq_inv_iff_eq.mpr h₁
+      exact (h h₂).elim
+    simp
+    intro h₂
+    exact (h₁ h₂).elim
+  · intro h
+    exact (h (Finset.mem_univ (σ⁻¹ i))).elim
 
 -- The map `perm_mat` preserves multiplication
 lemma perm_mat_hom_proof [Fact (Prime p)] (σ τ : Equiv.Perm G) : perm_mat (σ * τ) = (perm_mat σ : Matrix G G (ZMod p)) * (perm_mat τ) := by
-    ext i j
-    rw [mul_matrix_apply]
-    dsimp [perm_mat]
-    have h : σ (τ j) = i ↔ τ j = σ⁻¹ i := by
-      apply Iff.intro
-      · intro h
-        exact Equiv.Perm.eq_inv_iff_eq.mpr h
-      · intro h
-        exact (Equiv.apply_eq_iff_eq_symm_apply σ).mpr h
-    refine ite_congr (propext h) (congrFun rfl) (congrFun rfl)
+  ext i j
+  rw [mul_matrix_apply]
+  dsimp [perm_mat]
+  have h : σ (τ j) = i ↔ τ j = σ⁻¹ i := by
+    apply Iff.intro
+    · intro h
+      exact Equiv.Perm.eq_inv_iff_eq.mpr h
+    · intro h
+      exact (Equiv.apply_eq_iff_eq_symm_apply σ).mpr h
+  refine ite_congr (propext h) (congrFun rfl) (congrFun rfl)
 
 -- The identity permutation maps to the identity matrix
 lemma perm_mat_1 [Fact (Prime p)] : perm_mat 1 = (1 : Matrix G G (ZMod p)) := by
