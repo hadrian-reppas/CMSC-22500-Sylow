@@ -102,12 +102,12 @@ noncomputable instance [Fact (Prime p)] : Fintype (UpperTriangularₙₚ n p) :=
 lemma UT_card [Fact (Prime p)] : Fintype.card (UpperTriangularₙₚ n p) = p ^ (n * (n - 1) / 2) := sorry
 lemma GL_card [Fact (Prime p)] : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p^n - p^i) := sorry
 
--- The injection from a permutation `σ : Equiv.Perm G` to a permutation matrix
-def perm_mat {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
-  (σ : Equiv.Perm G) : Matrix G G (ZMod p) := λ i j ↦ if σ j = i then 1 else 0
+variable {G : Type u} [Group G] [Fintype G] [DecidableEq G]
 
-lemma mul_matrix_apply [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)] (σ : Equiv.Perm G) (M : Matrix G G (ZMod p))
-   : (perm_mat σ * M :) i j = M (σ⁻¹ i) j := by
+-- The injection from a permutation `σ : Equiv.Perm G` to a permutation matrix
+def perm_mat [Fact (Prime p)] (σ : Equiv.Perm G) : Matrix G G (ZMod p) := λ i j ↦ if σ j = i then 1 else 0
+
+lemma mul_matrix_apply [Fact (Prime p)] (σ : Equiv.Perm G) (M : Matrix G G (ZMod p)) : (perm_mat σ * M :) i j = M (σ⁻¹ i) j := by
     dsimp [perm_mat, Matrix.mul_apply]
     rw [Finset.sum_eq_single (σ⁻¹ i)]
     · simp
@@ -122,8 +122,7 @@ lemma mul_matrix_apply [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)] (�
       exact (h (Finset.mem_univ (σ⁻¹ i))).elim
 
 -- The map `perm_mat` preserves multiplication
-lemma perm_mat_hom_proof [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)] (σ τ : Equiv.Perm G)
-   : perm_mat (σ * τ) = (perm_mat σ : Matrix G G (ZMod p)) * (perm_mat τ) := by
+lemma perm_mat_hom_proof [Fact (Prime p)] (σ τ : Equiv.Perm G) : perm_mat (σ * τ) = (perm_mat σ : Matrix G G (ZMod p)) * (perm_mat τ) := by
     ext i j
     rw [mul_matrix_apply]
     dsimp [perm_mat]
@@ -136,7 +135,7 @@ lemma perm_mat_hom_proof [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)] 
     refine ite_congr (propext h) (congrFun rfl) (congrFun rfl)
 
 -- The identity permutation maps to the identity matrix
-lemma perm_mat_1 [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)] : perm_mat 1 = (1 : Matrix G G (ZMod p)) := by
+lemma perm_mat_1 [Fact (Prime p)] : perm_mat 1 = (1 : Matrix G G (ZMod p)) := by
   ext i j
   unfold perm_mat
   by_cases h : j = i
@@ -151,8 +150,7 @@ lemma perm_mat_1 [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)] : perm_m
     exact Matrix.one_apply
 
 -- `perm_mat` is a homomorphism
-def perm_mat_hom {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
-   : MonoidHom (Equiv.Perm G) (Matrix G G (ZMod p)) := {
+def perm_mat_hom [Fact (Prime p)] : MonoidHom (Equiv.Perm G) (Matrix G G (ZMod p)) := {
   toFun := perm_mat,
   map_one' := perm_mat_1,
   map_mul' := perm_mat_hom_proof,
@@ -160,85 +158,81 @@ def perm_mat_hom {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime
 
 -- The determinant of a permutation matrix is nonzero
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/Matrix/Determinant.html#Matrix.det_permutation
-lemma perm_mat_det {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
-  (σ : Equiv.Perm G) : (perm_mat σ).det ≠ (0 : ZMod p) := sorry
+lemma perm_mat_det [Fact (Prime p)] (σ : Equiv.Perm G) : (perm_mat σ).det ≠ (0 : ZMod p) := sorry
 
 -- Permutation matrices are invertible
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/Matrix/NonsingularInverse.html#Matrix.invertibleOfIsUnitDet
-instance perm_mat_inv {G : Type u} [Group G] [h₁ : Fintype G] [h₂ : DecidableEq G] [Fact (Prime p)]
-  (σ : Equiv.Perm G) : Invertible (perm_mat σ : Matrix G G (ZMod p)) := sorry
+instance perm_mat_inv [Fact (Prime p)] (σ : Equiv.Perm G) : Invertible (perm_mat σ : Matrix G G (ZMod p)) := sorry
 
 -- If `G` has cardinality `n`, then we have a bijection between `G` and `Fin n`
 noncomputable def enumerate (G : Type u) [Fintype G] : G ≃ Fin (Fintype.card G) :=
   have h₁ := Fintype.card_fin (Fintype.card G)
   Classical.choice (Fintype.card_eq.mp h₁.symm)
 
+-- A square matrix indexed by `Fin (Fintype.card G)`
+abbrev FinMat (G : Type u) (α : Type v) [Fintype G] := Matrix (Fin (Fintype.card G)) (Fin (Fintype.card G)) α
+
 -- Turn a matrix indexed by `G` into a matrix indexed by `Fin (Fintype.card G)`
-noncomputable def reindex {G : Type u} [Fintype G] (M : Matrix G G (ZMod p))
-   : Matrix (Fin (Fintype.card G)) (Fin (Fintype.card G)) (ZMod p) :=
+noncomputable def reindex (M : Matrix G G (ZMod p)) : FinMat G (ZMod p) :=
   Matrix.reindex (enumerate G) (enumerate G) M
 
-lemma reindex_1 {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)] : reindex (1 : Matrix G G (ZMod p)) = 1 := by
-    ext i j
-    rw [reindex, Matrix.reindex]
-    simp
-    have : (enumerate G).symm i = (enumerate G).symm j ↔ i = j := ⟨
-      λ h ↦
-        let f := (enumerate G).symm
-        have h₁ : (enumerate G).symm = f := rfl
-        by
-          rw [h₁] at h
-          have : f.invFun (f i) = f.invFun (f j) := congrArg f.invFun h
-          simp at *
-          exact h,
-      λ h ↦ by simp [h],
-    ⟩
-    rw [Matrix.one_apply]
-    by_cases h₂ : i = j <;> simp [h₂]
+lemma reindex_1 [Fact (Prime p)] : reindex (1 : Matrix G G (ZMod p)) = 1 := by
+  ext i j
+  rw [reindex, Matrix.reindex]
+  simp
+  have : (enumerate G).symm i = (enumerate G).symm j ↔ i = j := ⟨
+    λ h ↦
+      let f := (enumerate G).symm
+      have h₁ : (enumerate G).symm = f := rfl
+      by
+        rw [h₁] at h
+        have : f.invFun (f i) = f.invFun (f j) := congrArg f.invFun h
+        simp at *
+        exact h,
+    λ h ↦ by simp [h],
+  ⟩
+  rw [Matrix.one_apply]
+  by_cases h₂ : i = j <;> simp [h₂]
 
-lemma reindex_mul {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
-  (M N : Matrix G G (ZMod p)) : reindex (M * N) = reindex M * reindex N := by
-    ext i₀ j₀
-    rw [Matrix.mul_apply, reindex, Matrix.reindex]
-    simp
-    let f := (enumerate G).symm
-    have hf : (enumerate G).symm = f := rfl
-    rw [hf, Matrix.mul_apply, reindex, Matrix.reindex]
-    simp
-    rw [hf]
-    rw [reindex, Matrix.reindex]
-    simp
-    rw [hf]
-    exact (Equiv.sum_comp f (λ j ↦ M (f i₀) j * N j (f j₀))).symm
+lemma reindex_mul [Fact (Prime p)] (M N : Matrix G G (ZMod p)) : reindex (M * N) = reindex M * reindex N := by
+  ext i₀ j₀
+  rw [Matrix.mul_apply, reindex, Matrix.reindex]
+  simp
+  let f := (enumerate G).symm
+  have hf : (enumerate G).symm = f := rfl
+  rw [hf, Matrix.mul_apply, reindex, Matrix.reindex]
+  simp
+  rw [hf]
+  rw [reindex, Matrix.reindex]
+  simp
+  rw [hf]
+  exact (Equiv.sum_comp f (λ j ↦ M (f i₀) j * N j (f j₀))).symm
 
 -- `reindex` is a homomorphism
-noncomputable def reindex_hom {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
-   : MonoidHom (Matrix G G (ZMod p)) (Matrix (Fin (Fintype.card G)) (Fin (Fintype.card G)) (ZMod p)) := {
+noncomputable def reindex_hom [Fact (Prime p)] : MonoidHom (Matrix G G (ZMod p)) (FinMat G (ZMod p)) := {
   toFun := reindex,
   map_one' := reindex_1,
   map_mul' := reindex_mul,
 }
 
 -- We can compose the two homomorphisms
-noncomputable def perm_mat_reindexed {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
-   : MonoidHom (Equiv.Perm G) (Matrix (Fin (Fintype.card G)) (Fin (Fintype.card G)) (ZMod p)) := MonoidHom.comp reindex_hom perm_mat_hom
+noncomputable def perm_mat_reindexed [Fact (Prime p)] : MonoidHom (Equiv.Perm G) (FinMat G (ZMod p)) :=
+  MonoidHom.comp reindex_hom perm_mat_hom
 
 -- Reindexed permutation matrices are invertible
-noncomputable instance perm_mat_inv' {G : Type u} [Fintype G] [Group G] [DecidableEq G] [Fact (Prime p)] (σ : Equiv.Perm G)
-   : Invertible (perm_mat_reindexed σ : Matrix (Fin (Fintype.card G)) (Fin (Fintype.card G)) (ZMod p)) := {
-    invOf := perm_mat_reindexed σ⁻¹,
-    invOf_mul_self := MonoidHom.toHomUnits.proof_2 (perm_mat_reindexed : MonoidHom (Equiv.Perm G) (Matrix (Fin (Fintype.card G)) (Fin (Fintype.card G)) (ZMod p))) σ,
-    mul_invOf_self := MonoidHom.toHomUnits.proof_1 (perm_mat_reindexed : MonoidHom (Equiv.Perm G) (Matrix (Fin (Fintype.card G)) (Fin (Fintype.card G)) (ZMod p))) σ,
-  }
+noncomputable instance perm_mat_inv' [Fact (Prime p)] (σ : Equiv.Perm G) : Invertible (perm_mat_reindexed σ : FinMat G (ZMod p)) := {
+  invOf := perm_mat_reindexed σ⁻¹,
+  invOf_mul_self := MonoidHom.toHomUnits.proof_2 (perm_mat_reindexed : MonoidHom (Equiv.Perm G) (FinMat G (ZMod p))) σ,
+  mul_invOf_self := MonoidHom.toHomUnits.proof_1 (perm_mat_reindexed : MonoidHom (Equiv.Perm G) (FinMat G (ZMod p))) σ,
+}
 
 -- The injection from a permutation `σ : Equiv.Perm G` to a `Fin n`-indexed permutation matrix
-noncomputable def perm_mat' {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
-  (σ : Equiv.Perm G) : GLₙFₚ (Fintype.card G) p := {
-    val := perm_mat_reindexed σ,
-    inv := (perm_mat_reindexed σ)⁻¹,
-    val_inv := Matrix.mul_inv_of_invertible (perm_mat_reindexed σ),
-    inv_val := Matrix.inv_mul_of_invertible (perm_mat_reindexed σ),
-  }
+noncomputable def perm_mat' [Fact (Prime p)] (σ : Equiv.Perm G) : GLₙFₚ (Fintype.card G) p := {
+  val := perm_mat_reindexed σ,
+  inv := (perm_mat_reindexed σ)⁻¹,
+  val_inv := Matrix.mul_inv_of_invertible (perm_mat_reindexed σ),
+  inv_val := Matrix.inv_mul_of_invertible (perm_mat_reindexed σ),
+}
 
 -- Next, we prove that `perm_mat'` has trivial kernel, so it's injective
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Algebra/Group/Subgroup/Basic.html#AddMonoidHom.ker_eq_bot_iff
