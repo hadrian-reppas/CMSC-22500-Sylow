@@ -7,6 +7,7 @@ import Mathlib.Algebra.BigOperators.Basic
 import Mathlib.GroupTheory.Perm.Subgroup
 import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 
+-- `GLₙFₚ n p` is the set of invertible `n` by `n` matrices with elements from `Fₚ`
 abbrev GLₙFₚ (n p : ℕ) := GL (Fin n) (ZMod p)
 
 variable {n p : ℕ} {M N : GLₙFₚ n p}
@@ -239,8 +240,11 @@ noncomputable def perm_mat_fun [Fact p.Prime] (σ : Equiv.Perm G) : GLₙFₚ (F
   inv_val := Matrix.inv_mul_of_invertible (perm_mat_reindexed σ),
 }
 
+-- An abbreviation for `perm_mat`'s type
+abbrev PermHom (G : Type u) (p : ℕ) [Fintype G] := MonoidHom (Equiv.Perm G) (GLₙFₚ (Fintype.card G) p)
+
 -- The homomorphism from `Equiv.Perm G` to `GLₙFₚ (Fintype.card G) p`
-noncomputable def perm_mat [Fact p.Prime] : MonoidHom (Equiv.Perm G) (GLₙFₚ (Fintype.card G) p) := {
+noncomputable def perm_mat [Fact p.Prime] : PermHom G p := {
   toFun := perm_mat_fun,
   map_one' := by
     apply Units.liftRight.proof_1 perm_mat_reindexed perm_mat_fun
@@ -252,10 +256,54 @@ noncomputable def perm_mat [Fact p.Prime] : MonoidHom (Equiv.Perm G) (GLₙFₚ 
     rfl
 }
 
--- Next, we prove that `perm_mat` has trivial kernel, so it's injective
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Algebra/Group/Subgroup/Basic.html#AddMonoidHom.ker_eq_bot_iff
--- Thus, `Equiv.Perm G` is isomorphic to a subgroup of `GLₙFₚ (Fintype.card G) p`
+-- `perm_mat` has trivial kernel
+lemma perm_mat_trivial_ker [Fact p.Prime] : (perm_mat : PermHom G p).ker = ⊥ := by
+  refine (Subgroup.ext ?h).symm
+  intro σ
+  apply Iff.intro <;> intro h <;> simp at *
+  · exact Subgroup.instCompleteLatticeSubgroup.proof_9 (MonoidHom.ker perm_mat) σ h
+  · have h₁ : (perm_mat σ : GLₙFₚ (Fintype.card G) p) = 1 := h
+    have h₂ : ∀ i j, perm_mat σ i j = (1 : GLₙFₚ (Fintype.card G) p) i j := by
+      intro _ _
+      apply congrFun
+      apply congrFun
+      simp
+      assumption
+    ext x
+    unfold perm_mat at h₁
+    simp at h₁
+    unfold perm_mat_fun at h₁
+    have h₃ : perm_mat_reindexed σ = 1 := Units.eq_iff.mpr h₁
+    unfold perm_mat_reindexed at h₃
+    unfold reindex_hom at h₃
+    unfold perm_mat₀_hom at h₃
+    unfold perm_mat₀ at h₃
+    unfold reindex at h₃
+    simp at *
+    unfold Matrix.submatrix at h₃
+    simp at *
+    let f := (enumerate G).symm
+    have hf : (enumerate G).symm = f := rfl
+    rw [hf] at h₃
+    have h₄ : ∀ i j, (Matrix.of fun i j ↦ if σ (f j) = f i then 1 else 0) i j = (1 : FinMat G (ZMod p)) i j := λ i j ↦ h₂ i j
+    have h₅ := h₄ (f.invFun x) (f.invFun x)
+    simp at h₅
+    assumption
 
+-- `perm_mat` is injective
+lemma perm_mat_inj [Fact p.Prime] : Function.Injective (perm_mat : PermHom G p) :=
+  (MonoidHom.ker_eq_bot_iff perm_mat).mp perm_mat_trivial_ker
+
+-- `Equiv.Perm G` is isomorphic to a subgroup of `GLₙFₚ (Fintype.card G) p`
+theorem perm_subgroup [Fact p.Prime] : Equiv.Perm G ≃* (perm_mat : PermHom G p).range := by
+  refine MonoidHom.ofInjective perm_mat_inj
+
+theorem Cayley'sTheorem (G : Type u) [Group G] : G ≃* (MulAction.toPermHom G G).range :=
+  Equiv.Perm.subgroupOfMulAction G G
+
+-- The homomorphism that maps from `G` to `GLₙFₚ (Fintype.card G) p`
+noncomputable def GLₙFₚ_hom (G : Type u) [Group G] [DecidableEq G] [Fintype G] [Fact p.Prime]
+   : MonoidHom G (FinMat G (ZMod p)) := sorry
 
 instance [h : Fact p.Prime] : NeZero p := ⟨Nat.Prime.ne_zero h.out⟩
 instance [Fact p.Prime] : Fintype (GLₙFₚ n p) := instFintypeUnits
