@@ -186,23 +186,67 @@ noncomputable def reindex {G : Type u} [Fintype G] (M : Matrix G G (ZMod p))
    : Matrix (Fin (Fintype.card G)) (Fin (Fintype.card G)) (ZMod p) :=
   Matrix.reindex (enumerate G) (enumerate G) M
 
+lemma reindex_1 {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)] : reindex (1 : Matrix G G (ZMod p)) = 1 := by
+    ext i j
+    rw [reindex, Matrix.reindex]
+    simp
+    have : (enumerate G).symm i = (enumerate G).symm j ↔ i = j := ⟨
+      λ h ↦
+        let f := (enumerate G).symm
+        have h₁ : (enumerate G).symm = f := rfl
+        by
+          rw [h₁] at h
+          have : f.invFun (f i) = f.invFun (f j) := congrArg f.invFun h
+          simp at *
+          exact h,
+      λ h ↦ by simp [h],
+    ⟩
+    rw [Matrix.one_apply]
+    by_cases h₂ : i = j <;> simp [h₂]
+
+lemma reindex_mul {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
+  (M N : Matrix G G (ZMod p)) : reindex (M * N) = reindex M * reindex N := by
+    ext i' j'
+    rw [Matrix.mul_apply, reindex, Matrix.reindex]
+    simp
+    let f := (enumerate G).symm
+    have hf : (enumerate G).symm = f := rfl
+    rw [hf, Matrix.mul_apply, reindex, Matrix.reindex]
+    simp
+    rw [hf]
+    rw [reindex, Matrix.reindex]
+    simp
+    rw [hf]
+    apply Function.Bijective.sum_comp
+    · admit
+    · admit
+    · admit
+
 -- `reindex` is a homomorphism
 noncomputable def reindex_hom {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
    : MonoidHom (Matrix G G (ZMod p)) (Matrix (Fin (Fintype.card G)) (Fin (Fintype.card G)) (ZMod p)) := {
   toFun := reindex,
-  map_one' := sorry,
-  map_mul' := sorry,
+  map_one' := reindex_1,
+  map_mul' := reindex_mul,
 }
 
+noncomputable def perm_mat_reindexed {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
+   : MonoidHom (Equiv.Perm G) (Matrix (Fin (Fintype.card G)) (Fin (Fintype.card G)) (ZMod p)) := MonoidHom.comp reindex_hom perm_mat_hom
+
 -- Reindexed permutation matrices are invertible
+-- Maybe we get this from the fact that the image of a homomorphism is a group?
 instance perm_mat_inv' {G : Type u} [Fintype G] [Group G] [DecidableEq G] [Fact (Prime p)] (σ : Equiv.Perm G)
-   : Invertible (reindex (perm_mat σ : Matrix  G G (ZMod p))) := sorry
+   : Invertible (perm_mat_reindexed σ : Matrix (Fin (Fintype.card G)) (Fin (Fintype.card G)) (ZMod p)) := sorry
 
 -- The injection from a permutation `σ : Equiv.Perm G` to a `Fin n`-indexed permutation matrix
 noncomputable def perm_mat' {G : Type u} [Group G] [Fintype G] [DecidableEq G] [Fact (Prime p)]
   (σ : Equiv.Perm G) : GLₙFₚ (Fintype.card G) p := {
-    val := reindex (perm_mat σ),
-    inv := (reindex (perm_mat σ))⁻¹,
-    val_inv := Matrix.mul_inv_of_invertible (reindex (perm_mat σ)),
-    inv_val := Matrix.inv_mul_of_invertible (reindex (perm_mat σ)),
+    val := perm_mat_reindexed σ,
+    inv := (perm_mat_reindexed σ)⁻¹,
+    val_inv := Matrix.mul_inv_of_invertible (perm_mat_reindexed σ),
+    inv_val := Matrix.inv_mul_of_invertible (perm_mat_reindexed σ),
   }
+
+-- Next, we prove that `perm_mat'` has trivial kernel, so it's injective
+-- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Algebra/Group/Subgroup/Basic.html#AddMonoidHom.ker_eq_bot_iff
+-- Thus, `Equiv.Perm G` is isomorphic to a subgroup of `GLₙFₚ (Fintype.card G) p`
