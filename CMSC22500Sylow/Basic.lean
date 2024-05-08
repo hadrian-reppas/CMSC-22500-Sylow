@@ -358,36 +358,6 @@ open SubgroupGLₙFₚ
 ###############################################################################
 -/
 
-instance [h : Fact p.Prime] : NeZero p := ⟨Nat.Prime.ne_zero h.out⟩
-instance [Fact p.Prime] : Fintype (GLₙFₚ n p) := instFintypeUnits
-noncomputable instance [Fact p.Prime] : Fintype (UpperTriangularₙₚ n p) := Fintype.ofFinite (UpperTriangularₙₚ n p)
-
--- I think these are the right sizes
--- We might not need these if we can prove p-Sylowness directly
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/GroupTheory/Coset.html#Subgroup.card_subgroup_dvd_card
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Data/Fintype/Perm.html#Fintype.card_perm
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/LinearIndependent.html
--- https://people.math.osu.edu/cueto.5/teaching/6111/Au20/files/HW03Solutions.pdf
-lemma UT_card [Fact p.Prime] : Fintype.card (UpperTriangularₙₚ n p) = p ^ (n * (n - 1) / 2) := sorry
-lemma GL_card [Fact p.Prime] : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p^n - p^i) := sorry
-
-
-def UT_Sylow (n p : ℕ) [Fact p.Prime] : Sylow p (GLₙFₚ n p) := {
-  carrier := UpperTriangularₙₚ n p,
-  mul_mem' := (UpperTriangularₙₚ n p).mul_mem',
-  one_mem' := (UpperTriangularₙₚ n p).one_mem',
-  inv_mem' := (UpperTriangularₙₚ n p).inv_mem',
-  isPGroup' := sorry,
-  is_maximal' := sorry,
-}
-
--- Claim from Calegari's proof (might have to add some `Fintype`s)
-def subset_Sylow (G : Type u) [Group G] (H : Subgroup G) (Γ : Type v) [Group Γ] (h : Γ ≃* H) (P : Sylow p G) : Sylow p Γ := sorry
-
--- Sylow I
-theorem SylowI (p : ℕ) (G : Type u) [Group G] [Fintype G] [DecidableEq G] [Fact p.Prime] : Sylow p G :=
-  subset_Sylow (GLₙFₚ (Fintype.card G) p) (GLₙFₚ_hom G p).range G (subgroup_GLₙFₚ p G) (UT_Sylow (Fintype.card G) p)
-
 def IsAboveDiag {n : ℕ} (p : Fin n × Fin n) : Prop := p.fst < p.snd
 def AboveDiag (n : ℕ) := { p : Fin n × Fin n // IsAboveDiag p }
 
@@ -396,27 +366,64 @@ instance {n : ℕ} : Fintype (Fin n × Fin n) := instFintypeProd (Fin n) (Fin n)
 noncomputable instance {n : ℕ} : DecidablePred (@IsAboveDiag n) := Classical.decPred IsAboveDiag
 noncomputable instance {n : ℕ} : Fintype (AboveDiag n) := Subtype.fintype (@IsAboveDiag n)
 
-lemma AboveDiag_card (n : ℕ) : Fintype.card (AboveDiag n) = n * (n - 1) / 2 := sorry
+def AboveDiag_equiv_impl {n p : ℕ} (f : AboveDiag n → (ZMod p)) : Matrix (Fin n) (Fin n) (ZMod p) :=
+  λ i j ↦ if i = j then 1 else if h : i < j then f ⟨(i, j), h⟩ else 0
 
-def AboveDiag_equiv₀ {n p : ℕ} (f : AboveDiag n → (ZMod p)) : GLₙFₚ n p := {
-  val := λ i j ↦ if i = j then 1 else if h : i < j then f ⟨(i, j), h⟩ else 0,
-  inv := sorry,
-  val_inv := sorry,
-  inv_val := sorry,
+lemma AboveDiag_ut {n p : ℕ} (f : AboveDiag n → (ZMod p)) : (AboveDiag_equiv_impl f).BlockTriangular id := by
+  intro i j h
+  unfold AboveDiag_equiv_impl
+  simp at *
+  rw [if_neg]
+  · have hn : ¬i < j := not_lt_of_gt h
+    exact (Ne.dite_eq_right_iff fun h _ ↦ hn h).mpr hn
+  · exact Fin.ne_of_gt h
+
+lemma det_1 {n p : ℕ} (f : AboveDiag n → (ZMod p)) : (AboveDiag_equiv_impl f).det = 1 := by
+  rw [Matrix.det_of_upperTriangular (AboveDiag_ut f)]
+  unfold AboveDiag_equiv_impl
+  simp
+
+instance inv_f {n p : ℕ} (f : AboveDiag n → (ZMod p)) [Fact p.Prime] : Invertible (AboveDiag_equiv_impl f) := by
+  have : Invertible (AboveDiag_equiv_impl f).det := by
+    rw [det_1]
+    exact invertibleOne
+  apply Matrix.invertibleOfDetInvertible (AboveDiag_equiv_impl f)
+
+def AboveDiag_equiv₀ {n p : ℕ} (f : AboveDiag n → (ZMod p)) [Fact p.Prime] : GLₙFₚ n p := {
+  val := AboveDiag_equiv_impl f,
+  inv := (inv_f f).invOf,
+  val_inv := (inv_f f).mul_invOf_self,
+  inv_val := (inv_f f).invOf_mul_self,
 }
 
-def AboveDiag_equiv' {n p : ℕ} (f : AboveDiag n → (ZMod p)) : UpperTriangularₙₚ n p := {
+lemma beep_boop {n p : ℕ} [Fact p.Prime] (f : AboveDiag n → (ZMod p)) : AboveDiag_equiv₀ f ∈ UpperTriangularₙₚ n p := by
+  constructor
+  · intro i j h
+    unfold AboveDiag_equiv₀
+    unfold AboveDiag_equiv_impl
+    simp
+    rw [if_neg]
+    · have hn : ¬i < j := not_lt_of_gt h
+      exact (Ne.dite_eq_right_iff fun h _ ↦ hn h).mpr hn
+    · exact Fin.ne_of_gt h
+  · intro i
+    unfold AboveDiag_equiv₀
+    unfold AboveDiag_equiv_impl
+    simp
+
+def AboveDiag_equiv' {n p : ℕ} [Fact p.Prime] (f : AboveDiag n → (ZMod p)) : UpperTriangularₙₚ n p := {
   val := AboveDiag_equiv₀ f,
-  property := sorry,
+  property := beep_boop f,
 }
 
 def AboveDiag_inv {n p : ℕ} (M : UpperTriangularₙₚ n p) (q : AboveDiag n) : (ZMod p) :=
   M.val q.val.fst q.val.snd
 
-lemma left_inv (n p : ℕ) : Function.LeftInverse (@AboveDiag_inv n p) AboveDiag_equiv' := by
+lemma left_inv (n p : ℕ) [Fact p.Prime] : Function.LeftInverse (@AboveDiag_inv n p) AboveDiag_equiv' := by
   refine Function.leftInverse_iff_comp.mpr ?_
   unfold AboveDiag_equiv'
   unfold AboveDiag_equiv₀
+  unfold AboveDiag_equiv_impl
   unfold AboveDiag_inv
   ext f x
   simp
@@ -443,10 +450,11 @@ lemma fin_le_helper {n : ℕ} {i j : Fin n} (h₁ : ¬i = j) (h₂ : ¬i < j) : 
     | .inl h => (h₁ h).elim
     | .inr h => (h₂ h).elim)
 
-lemma right_inv (n p : ℕ) : Function.RightInverse (@AboveDiag_inv n p) AboveDiag_equiv' := by
+lemma right_inv (n p : ℕ) [Fact p.Prime] : Function.RightInverse (@AboveDiag_inv n p) AboveDiag_equiv' := by
   refine Function.rightInverse_iff_comp.mpr ?_
   unfold AboveDiag_equiv'
   unfold AboveDiag_equiv₀
+  unfold AboveDiag_equiv_impl
   unfold AboveDiag_inv
   ext M i j
   simp
@@ -472,9 +480,50 @@ lemma right_inv (n p : ℕ) : Function.RightInverse (@AboveDiag_inv n p) AboveDi
             · have h₃ : j < i := fin_le_helper h₁ h₂
               exact (M.property.left i j h₃).symm))
 
-def AboveDiag_equiv : (AboveDiag n → (ZMod p)) ≃ UpperTriangularₙₚ n p := {
+def AboveDiag_equiv (n p : ℕ) [Fact p.Prime] : (AboveDiag n → ZMod p) ≃ UpperTriangularₙₚ n p := {
   toFun := AboveDiag_equiv',
   invFun := AboveDiag_inv,
   left_inv := left_inv n p,
   right_inv := right_inv n p,
 }
+
+-- TODO
+lemma AboveDiag_card (n : ℕ) : Fintype.card (AboveDiag n) = n * (n - 1) / 2 := sorry
+
+lemma ZMod_card (p : ℕ) [Fact p.Prime] : Fintype.card (ZMod p) = p := ZMod.card p
+noncomputable instance fin_funs {n : ℕ} [Fact p.Prime] : Fintype (AboveDiag n → ZMod p) := Fintype.ofFinite (AboveDiag n → ZMod p)
+noncomputable instance AboveDiag_DecidableEq {n : ℕ} : DecidableEq (AboveDiag n) := Classical.typeDecidableEq (AboveDiag n)
+lemma AboveDiag_fun_card (n p : ℕ) [Fact p.Prime] : Fintype.card (AboveDiag n → ZMod p) = p ^ (n * (n - 1) / 2) := by
+  rw [Fintype.card_fun, ZMod.card p, AboveDiag_card]
+noncomputable instance [Fact p.Prime] : Fintype (UpperTriangularₙₚ n p) := Fintype.ofFinite (UpperTriangularₙₚ n p)
+
+-- Yay!
+lemma UT_card (n p : ℕ) [Fact p.Prime] : Fintype.card (UpperTriangularₙₚ n p) = p ^ (n * (n - 1) / 2) := by
+  rw [←Fintype.card_congr (AboveDiag_equiv n p)]
+  exact AboveDiag_fun_card n p
+
+
+-- I think these are the right sizes
+-- We might not need these if we can prove p-Sylowness directly
+-- https://leanprover-community.github.io/mathlib4_docs/Mathlib/GroupTheory/Coset.html#Subgroup.card_subgroup_dvd_card
+-- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Data/Fintype/Perm.html#Fintype.card_perm
+-- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/LinearIndependent.html
+-- https://people.math.osu.edu/cueto.5/teaching/6111/Au20/files/HW03Solutions.pdf
+
+lemma GL_card [Fact p.Prime] : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p^n - p^i) := sorry
+
+def UT_Sylow (n p : ℕ) [Fact p.Prime] : Sylow p (GLₙFₚ n p) := {
+  carrier := UpperTriangularₙₚ n p,
+  mul_mem' := (UpperTriangularₙₚ n p).mul_mem',
+  one_mem' := (UpperTriangularₙₚ n p).one_mem',
+  inv_mem' := (UpperTriangularₙₚ n p).inv_mem',
+  isPGroup' := sorry,
+  is_maximal' := sorry,
+}
+
+-- Claim from Calegari's proof (might have to add some `Fintype`s)
+def subset_Sylow (G : Type u) [Group G] (H : Subgroup G) (Γ : Type v) [Group Γ] (h : Γ ≃* H) (P : Sylow p G) : Sylow p Γ := sorry
+
+-- Sylow I
+theorem SylowI (p : ℕ) (G : Type u) [Group G] [Fintype G] [DecidableEq G] [Fact p.Prime] : Sylow p G :=
+  subset_Sylow (GLₙFₚ (Fintype.card G) p) (GLₙFₚ_hom G p).range G (subgroup_GLₙFₚ p G) (UT_Sylow (Fintype.card G) p)
