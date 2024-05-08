@@ -333,14 +333,16 @@ lemma UT_inv_ones {i : Fin n} (h : IsUpperTriangular M) : M.inv i i = 1 :=
     exact h₄
   h₆
 
+lemma UT_one : ZerosUnderDiag (1 : GLₙFₚ n p) ∧ OnesOnDiag (1 : GLₙFₚ n p) := ⟨
+    λ _ _ h ↦ Matrix.one_apply_ne (Ne.symm (Fin.ne_of_lt h)),
+    Matrix.one_apply_eq
+  ⟩
+
 -- The subgroup of upper triangular matrices
 def UpperTriangularₙₚ (n p : ℕ) : Subgroup (GLₙFₚ n p) := {
   carrier := IsUpperTriangular,
   mul_mem' := λ ha hb ↦ ⟨UT_mul_zeros ha hb, UT_mul_ones ha hb⟩,
-  one_mem' := ⟨
-    λ _ _ h ↦ Matrix.one_apply_ne (Ne.symm (Fin.ne_of_lt h)),
-    Matrix.one_apply_eq
-  ⟩,
+  one_mem' := UT_one,
   inv_mem' := λ h ↦ ⟨ZUD_inv_ZUD h.left, λ _ ↦ UT_inv_ones h⟩
 }
 
@@ -359,6 +361,7 @@ instance [Fact p.Prime] : Fintype (GLₙFₚ n p) := instFintypeUnits
 noncomputable instance [Fact p.Prime] : Fintype (UpperTriangularₙₚ n p) := Fintype.ofFinite (UpperTriangularₙₚ n p)
 
 -- I think these are the right sizes
+-- We might not need these if we can prove p-Sylowness directly
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/GroupTheory/Coset.html#Subgroup.card_subgroup_dvd_card
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Data/Fintype/Perm.html#Fintype.card_perm
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/LinearIndependent.html
@@ -368,9 +371,9 @@ lemma GL_card [Fact p.Prime] : Fintype.card (GLₙFₚ n p) = Finset.prod (Finse
 
 def UT_Sylow (n p : ℕ) [Fact p.Prime] : Sylow p (GLₙFₚ n p) := {
   carrier := UpperTriangularₙₚ n p,
-  mul_mem' := sorry,
-  one_mem' := sorry,
-  inv_mem' := sorry,
+  mul_mem' := λ ha hb ↦ ⟨UT_mul_zeros ha hb, UT_mul_ones ha hb⟩,
+  one_mem' := UT_one,
+  inv_mem' := λ h ↦ ⟨ZUD_inv_ZUD h.left, λ _ ↦ UT_inv_ones h⟩
   isPGroup' := sorry,
   is_maximal' := sorry,
 }
