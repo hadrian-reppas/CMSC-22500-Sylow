@@ -11,10 +11,10 @@ instance : Fintype (Fin n × Fin n) := instFintypeProd (Fin n) (Fin n)
 noncomputable instance : DecidablePred (@IsAboveDiag n) := Classical.decPred (IsAboveDiag n)
 noncomputable instance : Fintype (AboveDiag n) := Subtype.fintype (@IsAboveDiag n)
 
-def AboveDiag_equiv_impl {n p : ℕ} (f : AboveDiag n → (ZMod p)) : Matrix (Fin n) (Fin n) (ZMod p) :=
+def AboveDiag_equiv_impl (f : AboveDiag n → (ZMod p)) : Matrix (Fin n) (Fin n) (ZMod p) :=
   λ i j ↦ if i = j then 1 else if h : i < j then f ⟨(i, j), h⟩ else 0
 
-lemma AboveDiag_ut {n p : ℕ} (f : AboveDiag n → (ZMod p)) : (AboveDiag_equiv_impl f).BlockTriangular id := by
+lemma AboveDiag_ut (f : AboveDiag n → (ZMod p)) : (AboveDiag_equiv_impl f).BlockTriangular id := by
   intro i j h
   unfold AboveDiag_equiv_impl
   simp at *
@@ -23,25 +23,25 @@ lemma AboveDiag_ut {n p : ℕ} (f : AboveDiag n → (ZMod p)) : (AboveDiag_equiv
     exact (Ne.dite_eq_right_iff fun h _ ↦ hn h).mpr hn
   · exact Fin.ne_of_gt h
 
-lemma det_1 {n p : ℕ} (f : AboveDiag n → (ZMod p)) : (AboveDiag_equiv_impl f).det = 1 := by
+lemma det_1 (f : AboveDiag n → (ZMod p)) : (AboveDiag_equiv_impl f).det = 1 := by
   rw [Matrix.det_of_upperTriangular (AboveDiag_ut f)]
   unfold AboveDiag_equiv_impl
   simp
 
-instance inv_f {n p : ℕ} (f : AboveDiag n → (ZMod p)) [Fact p.Prime] : Invertible (AboveDiag_equiv_impl f) := by
+instance inv_f (f : AboveDiag n → (ZMod p)) [Fact p.Prime] : Invertible (AboveDiag_equiv_impl f) := by
   have : Invertible (AboveDiag_equiv_impl f).det := by
     rw [det_1]
     exact invertibleOne
   apply Matrix.invertibleOfDetInvertible (AboveDiag_equiv_impl f)
 
-def AboveDiag_equiv₀ {n p : ℕ} (f : AboveDiag n → (ZMod p)) [Fact p.Prime] : GLₙFₚ n p := {
+def AboveDiag_equiv₀ (f : AboveDiag n → (ZMod p)) [Fact p.Prime] : GLₙFₚ n p := {
   val := AboveDiag_equiv_impl f,
   inv := (inv_f f).invOf,
   val_inv := (inv_f f).mul_invOf_self,
   inv_val := (inv_f f).invOf_mul_self,
 }
 
-lemma beep_boop {n p : ℕ} [Fact p.Prime] (f : AboveDiag n → (ZMod p)) : AboveDiag_equiv₀ f ∈ UpperTriangularₙₚ n p := by
+lemma beep_boop [Fact p.Prime] (f : AboveDiag n → (ZMod p)) : AboveDiag_equiv₀ f ∈ UpperTriangularₙₚ n p := by
   constructor
   · intro i j h
     unfold AboveDiag_equiv₀
@@ -88,7 +88,7 @@ lemma left_inv (n p : ℕ) [hp : Fact p.Prime] : Function.LeftInverse (@AboveDia
           · assumption
           · rfl))
 
-lemma fin_le_helper {n : ℕ} {i j : Fin n} (h₁ : ¬i = j) (h₂ : ¬i < j) : j < i := by
+lemma fin_le_helper {i j : Fin n} (h₁ : ¬i = j) (h₂ : ¬i < j) : j < i := by
   refine Lean.Omega.Fin.not_le.mp ?_
   intro h
   exact (match LE.le.eq_or_lt h with
