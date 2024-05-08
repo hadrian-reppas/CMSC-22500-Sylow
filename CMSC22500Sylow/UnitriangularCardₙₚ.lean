@@ -6,10 +6,10 @@ variable {n p : ℕ} [Fact p.Prime]
 def IsAboveDiag (n : ℕ) (p : Fin n × Fin n) : Prop := p.fst < p.snd
 def AboveDiag (n : ℕ) := { p : Fin n × Fin n // IsAboveDiag n p }
 
-instance {n : ℕ} : Fintype (Fin n) := Fin.fintype n
-instance {n : ℕ} : Fintype (Fin n × Fin n) := instFintypeProd (Fin n) (Fin n)
-noncomputable instance {n : ℕ} : DecidablePred (@IsAboveDiag n) := Classical.decPred (IsAboveDiag n)
-noncomputable instance {n : ℕ} : Fintype (AboveDiag n) := Subtype.fintype (@IsAboveDiag n)
+instance : Fintype (Fin n) := Fin.fintype n
+instance : Fintype (Fin n × Fin n) := instFintypeProd (Fin n) (Fin n)
+noncomputable instance : DecidablePred (@IsAboveDiag n) := Classical.decPred (IsAboveDiag n)
+noncomputable instance : Fintype (AboveDiag n) := Subtype.fintype (@IsAboveDiag n)
 
 def AboveDiag_equiv_impl {n p : ℕ} (f : AboveDiag n → (ZMod p)) : Matrix (Fin n) (Fin n) (ZMod p) :=
   λ i j ↦ if i = j then 1 else if h : i < j then f ⟨(i, j), h⟩ else 0

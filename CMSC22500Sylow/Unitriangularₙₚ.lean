@@ -8,10 +8,10 @@ def ZerosUnderDiag (M : GLₙFₚ n p) : Prop := ∀ i j, j < i → M.val i j = 
 def OnesOnDiag (M : GLₙFₚ n p) : Prop := ∀ i, M.val i i = 1
 
 -- A predicate for upper triangular matrices
-def IsUpperTriangular (M : GLₙFₚ n p) : Prop := ZerosUnderDiag M ∧ OnesOnDiag M
+def IsUnitriangular (M : GLₙFₚ n p) : Prop := ZerosUnderDiag M ∧ OnesOnDiag M
 
 -- The product of two UT matrices has zeros under the diagonal
-lemma UT_mul_zeros (hM : IsUpperTriangular M) (hN : IsUpperTriangular N) (i j : Fin n) (h : j < i)
+lemma UT_mul_zeros (hM : IsUnitriangular M) (hN : IsUnitriangular N) (i j : Fin n) (h : j < i)
    : Matrix.dotProduct (λ k ↦ M.val i k) (λ k ↦ N.val k j) = (0 : ZMod p) :=
   Finset.sum_eq_zero (λ k _ ↦
     if hki : k < i then by simp [hM.left i k hki]
@@ -31,7 +31,7 @@ lemma ZUD_prod_0 {i j : Fin n} (hM : ZerosUnderDiag M) (hN : ZerosUnderDiag N) (
     | .inr h => by simp [hN j i h]
 
 -- The product of two UT matrices has ones on the diagonal
-lemma UT_mul_ones (hM : IsUpperTriangular M) (hN : IsUpperTriangular N) (i : Fin n)
+lemma UT_mul_ones (hM : IsUnitriangular M) (hN : IsUnitriangular N) (i : Fin n)
    : Matrix.dotProduct (λ k ↦ M.val i k) (λ k ↦ N.val k i) = (1 : ZMod p) := by simp [
       Matrix.dotProduct,
       Finset.sum_eq_single_of_mem i
@@ -50,7 +50,7 @@ lemma ZUD_inv_ZUD (h₁ : ZerosUnderDiag M) : ZerosUnderDiag M⁻¹ := λ i j h�
   exact (Matrix.blockTriangular_inv_of_blockTriangular (ZUD_block_triangular h₁) h₂)
 
 -- The inverse of an UT matrix has ones on the diagonal
-lemma UT_inv_ones {i : Fin n} (h : IsUpperTriangular M) : M.inv i i = 1 :=
+lemma UT_inv_ones {i : Fin n} (h : IsUnitriangular M) : M.inv i i = 1 :=
   have h₁ : (M.inv * M) i i = 1 := by simp [M.inv_val, Matrix.one_apply_eq i]
   have h₂ : Matrix.dotProduct (λ k ↦ M.inv i k) (λ k ↦ M k i) = 1 := h₁
   have h₃ : Matrix.dotProduct (λ k ↦ M.inv i k) (λ k ↦ M k i) = M.inv i i * M i i :=
@@ -74,8 +74,8 @@ lemma UT_one : ZerosUnderDiag (1 : GLₙFₚ n p) ∧ OnesOnDiag (1 : GLₙFₚ 
   ⟩
 
 -- The subgroup of upper triangular matrices
-def UpperTriangularₙₚ (n p : ℕ) [Fact p.Prime] : Subgroup (GLₙFₚ n p) := {
-  carrier := IsUpperTriangular,
+def Unitriangularₙₚ (n p : ℕ) [Fact p.Prime] : Subgroup (GLₙFₚ n p) := {
+  carrier := IsUnitriangular,
   mul_mem' := λ ha hb ↦ ⟨UT_mul_zeros ha hb, UT_mul_ones ha hb⟩,
   one_mem' := UT_one,
   inv_mem' := λ h ↦ ⟨ZUD_inv_ZUD h.left, λ _ ↦ UT_inv_ones h⟩
