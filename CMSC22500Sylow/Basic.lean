@@ -6,6 +6,7 @@ import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.Algebra.BigOperators.Basic
 import Mathlib.GroupTheory.Perm.Subgroup
 import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+import Mathlib.GroupTheory.Sylow
 
 -- `GLₙFₚ n p` is the set of invertible `n` by `n` matrices with elements from `Fₚ`
 abbrev GLₙFₚ (n p : ℕ) := GL (Fin n) (ZMod p)
@@ -347,6 +348,12 @@ end UpperTriangular
 
 open UpperTriangular
 
+/-
+###############################################################################
+         The upper triangular matrices are the `p`-Sylow of `GLₙFₚ n p`
+###############################################################################
+-/
+
 instance [h : Fact p.Prime] : NeZero p := ⟨Nat.Prime.ne_zero h.out⟩
 instance [Fact p.Prime] : Fintype (GLₙFₚ n p) := instFintypeUnits
 noncomputable instance [Fact p.Prime] : Fintype (UpperTriangularₙₚ n p) := Fintype.ofFinite (UpperTriangularₙₚ n p)
@@ -357,3 +364,16 @@ noncomputable instance [Fact p.Prime] : Fintype (UpperTriangularₙₚ n p) := F
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/LinearIndependent.html
 lemma UT_card [Fact p.Prime] : Fintype.card (UpperTriangularₙₚ n p) = p ^ (n * (n - 1) / 2) := sorry
 lemma GL_card [Fact p.Prime] : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p^n - p^i) := sorry
+
+
+def UT_Sylow (n p : ℕ) [Fact p.Prime] : Sylow p (GLₙFₚ n p) := {
+  carrier := UpperTriangularₙₚ n p,
+  mul_mem' := sorry,
+  one_mem' := sorry,
+  inv_mem' := sorry,
+  isPGroup' := sorry,
+  is_maximal' := sorry,
+}
+
+-- Claim from Calegari's proof (might have to add some `Fintype`s)
+def subset_Sylow (G : Type u) [Group G] (H : Subgroup G) (Γ : Type v) [Group Γ] (h : Γ ≃* H) (P : Sylow p G) : Sylow p H := sorry
