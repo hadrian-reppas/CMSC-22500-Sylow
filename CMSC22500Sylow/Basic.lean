@@ -240,11 +240,9 @@ noncomputable def perm_mat_fun [Fact p.Prime] (σ : Equiv.Perm G) : GLₙFₚ (F
   inv_val := Matrix.inv_mul_of_invertible (perm_mat_reindexed σ),
 }
 
--- An abbreviation for `perm_mat`'s type
-abbrev PermHom (G : Type u) (p : ℕ) [Fintype G] := MonoidHom (Equiv.Perm G) (GLₙFₚ (Fintype.card G) p)
-
 -- The homomorphism from `Equiv.Perm G` to `GLₙFₚ (Fintype.card G) p`
-noncomputable def perm_mat [Fact p.Prime] : PermHom G p := {
+noncomputable def perm_mat (G : Type u) (p : ℕ) [Group G] [Fintype G] [DecidableEq G] [Fact p.Prime]
+   : MonoidHom (Equiv.Perm G) ((GLₙFₚ (Fintype.card G)) p) := {
   toFun := perm_mat_fun,
   map_one' := by
     apply Units.liftRight.proof_1 perm_mat_reindexed perm_mat_fun
@@ -257,13 +255,13 @@ noncomputable def perm_mat [Fact p.Prime] : PermHom G p := {
 }
 
 -- `perm_mat` has trivial kernel
-lemma perm_mat_trivial_ker [Fact p.Prime] : (perm_mat : PermHom G p).ker = ⊥ := by
+lemma perm_mat_trivial_ker [Fact p.Prime] : (perm_mat G p).ker = ⊥ := by
   refine (Subgroup.ext ?h).symm
   intro σ
   apply Iff.intro <;> intro h <;> simp at *
-  · exact Subgroup.instCompleteLatticeSubgroup.proof_9 (MonoidHom.ker perm_mat) σ h
-  · have h₁ : (perm_mat σ : GLₙFₚ (Fintype.card G) p) = 1 := h
-    have h₂ : ∀ i j, perm_mat σ i j = (1 : GLₙFₚ (Fintype.card G) p) i j := by
+  · exact Subgroup.instCompleteLatticeSubgroup.proof_9 (MonoidHom.ker (perm_mat G p)) σ h
+  · have h₁ : (perm_mat G p σ) = 1 := h
+    have h₂ : ∀ i j, perm_mat G p σ i j = (1 : GLₙFₚ (Fintype.card G) p) i j := by
       intro _ _
       apply congrFun
       apply congrFun
@@ -291,19 +289,41 @@ lemma perm_mat_trivial_ker [Fact p.Prime] : (perm_mat : PermHom G p).ker = ⊥ :
     assumption
 
 -- `perm_mat` is injective
-lemma perm_mat_inj [Fact p.Prime] : Function.Injective (perm_mat : PermHom G p) :=
-  (MonoidHom.ker_eq_bot_iff perm_mat).mp perm_mat_trivial_ker
+lemma perm_mat_inj [Fact p.Prime] : Function.Injective (perm_mat G p) :=
+  (MonoidHom.ker_eq_bot_iff (perm_mat G p)).mp perm_mat_trivial_ker
 
 -- `Equiv.Perm G` is isomorphic to a subgroup of `GLₙFₚ (Fintype.card G) p`
-theorem perm_subgroup [Fact p.Prime] : Equiv.Perm G ≃* (perm_mat : PermHom G p).range := by
+theorem perm_subgroup [Fact p.Prime] : Equiv.Perm G ≃* (perm_mat G p).range := by
   refine MonoidHom.ofInjective perm_mat_inj
 
 theorem Cayley'sTheorem (G : Type u) [Group G] : G ≃* (MulAction.toPermHom G G).range :=
   Equiv.Perm.subgroupOfMulAction G G
 
 -- The homomorphism that maps from `G` to `GLₙFₚ (Fintype.card G) p`
-noncomputable def GLₙFₚ_hom (G : Type u) [Group G] [DecidableEq G] [Fintype G] [Fact p.Prime]
-   : MonoidHom G (FinMat G (ZMod p)) := sorry
+noncomputable def GLₙFₚ_hom (G : Type u) (p : ℕ) [Group G] [DecidableEq G] [Fintype G] [Fact p.Prime]
+   : MonoidHom G (GLₙFₚ (Fintype.card G) p) := MonoidHom.comp (perm_mat G p) (MulAction.toPermHom G G)
+
+-- `GLₙFₚ_hom` is injective
+theorem GLₙFₚ_hom_inj [Fact p.Prime] : Function.Injective (GLₙFₚ_hom G p) := by
+  unfold GLₙFₚ_hom
+  unfold MonoidHom.comp
+  simp
+  apply Function.Injective.comp
+  · exact perm_mat_inj
+  · unfold MulAction.toPermHom
+    simp
+    unfold MulAction.toPerm
+    simp
+    intro σ τ
+    simp
+    intro h₁ _
+    have h₂ := congrFun h₁ 1
+    simp at h₂
+    assumption
+
+-- The final result: `G` is isomorphic to a subgroup of `GLₙFₚ (Fintype.card G) p`
+theorem G_subgroup_GLₙFₚ (G : Type u) [Group G] [Fintype G] [DecidableEq G] [Fact p.Prime] : G ≃* (GLₙFₚ_hom G p).range := by
+  refine MonoidHom.ofInjective GLₙFₚ_hom_inj
 
 instance [h : Fact p.Prime] : NeZero p := ⟨Nat.Prime.ne_zero h.out⟩
 instance [Fact p.Prime] : Fintype (GLₙFₚ n p) := instFintypeUnits
