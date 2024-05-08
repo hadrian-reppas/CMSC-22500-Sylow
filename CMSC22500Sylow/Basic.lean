@@ -267,6 +267,7 @@ end SubgroupGLₙFₚ
 ###############################################################################
 -/
 
+-- TODO: Rename to Unitriangular
 namespace UpperTriangular
 
 def ZerosUnderDiag (M : GLₙFₚ n p) : Prop := ∀ i j, j < i → M.val i j = 0
@@ -386,3 +387,94 @@ def subset_Sylow (G : Type u) [Group G] (H : Subgroup G) (Γ : Type v) [Group Γ
 -- Sylow I
 theorem SylowI (p : ℕ) (G : Type u) [Group G] [Fintype G] [DecidableEq G] [Fact p.Prime] : Sylow p G :=
   subset_Sylow (GLₙFₚ (Fintype.card G) p) (GLₙFₚ_hom G p).range G (subgroup_GLₙFₚ p G) (UT_Sylow (Fintype.card G) p)
+
+def IsAboveDiag {n : ℕ} (p : Fin n × Fin n) : Prop := p.fst < p.snd
+def AboveDiag (n : ℕ) := { p : Fin n × Fin n // IsAboveDiag p }
+
+instance {n : ℕ} : Fintype (Fin n) := Fin.fintype n
+instance {n : ℕ} : Fintype (Fin n × Fin n) := instFintypeProd (Fin n) (Fin n)
+noncomputable instance {n : ℕ} : DecidablePred (@IsAboveDiag n) := Classical.decPred IsAboveDiag
+noncomputable instance {n : ℕ} : Fintype (AboveDiag n) := Subtype.fintype (@IsAboveDiag n)
+
+lemma AboveDiag_card (n : ℕ) : Fintype.card (AboveDiag n) = n * (n - 1) / 2 := sorry
+
+def AboveDiag_equiv₀ {n p : ℕ} (f : AboveDiag n → (ZMod p)) : GLₙFₚ n p := {
+  val := λ i j ↦ if i = j then 1 else if h : i < j then f ⟨(i, j), h⟩ else 0,
+  inv := sorry,
+  val_inv := sorry,
+  inv_val := sorry,
+}
+
+def AboveDiag_equiv' {n p : ℕ} (f : AboveDiag n → (ZMod p)) : UpperTriangularₙₚ n p := {
+  val := AboveDiag_equiv₀ f,
+  property := sorry,
+}
+
+def AboveDiag_inv {n p : ℕ} (M : UpperTriangularₙₚ n p) (q : AboveDiag n) : (ZMod p) :=
+  M.val q.val.fst q.val.snd
+
+lemma left_inv (n p : ℕ) : Function.LeftInverse (@AboveDiag_inv n p) AboveDiag_equiv' := by
+  refine Function.leftInverse_iff_comp.mpr ?_
+  unfold AboveDiag_equiv'
+  unfold AboveDiag_equiv₀
+  unfold AboveDiag_inv
+  ext f x
+  simp
+  unfold AboveDiag at *
+  unfold IsAboveDiag at *
+  have h₁ := x.property
+  by_cases h₂ : x.val.fst = x.val.snd
+  · rw [h₂] at h₁
+    exact (gt_irrefl x.val.2 h₁).elim
+  · refine ite_eq_iff.mpr ?_
+    exact .inr (by
+      constructor
+      · assumption
+      · refine ite_eq_iff.mpr ?_
+        exact .inl (by
+          constructor
+          · assumption
+          · rfl))
+
+lemma fin_le_helper {n : ℕ} {i j : Fin n} (h₁ : ¬i = j) (h₂ : ¬i < j) : j < i := by
+  refine Lean.Omega.Fin.not_le.mp ?_
+  intro h
+  exact (match LE.le.eq_or_lt h with
+    | .inl h => (h₁ h).elim
+    | .inr h => (h₂ h).elim)
+
+lemma right_inv (n p : ℕ) : Function.RightInverse (@AboveDiag_inv n p) AboveDiag_equiv' := by
+  refine Function.rightInverse_iff_comp.mpr ?_
+  unfold AboveDiag_equiv'
+  unfold AboveDiag_equiv₀
+  unfold AboveDiag_inv
+  ext M i j
+  simp
+  refine ite_eq_iff.mpr ?_
+  by_cases h₁ : i = j
+  · constructor
+    constructor
+    · assumption
+    · rw [h₁]
+      exact (M.property.right j).symm
+  · exact .inr (by
+      constructor
+      · assumption
+      · refine ite_eq_iff.mpr ?_
+        by_cases h₂ : i < j
+        · constructor
+          constructor
+          · assumption
+          · rfl
+        · exact .inr (by
+            constructor
+            · assumption
+            · have h₃ : j < i := fin_le_helper h₁ h₂
+              exact (M.property.left i j h₃).symm))
+
+def AboveDiag_equiv : (AboveDiag n → (ZMod p)) ≃ UpperTriangularₙₚ n p := {
+  toFun := AboveDiag_equiv',
+  invFun := AboveDiag_inv,
+  left_inv := left_inv n p,
+  right_inv := right_inv n p,
+}
