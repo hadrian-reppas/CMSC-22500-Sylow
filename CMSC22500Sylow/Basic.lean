@@ -256,7 +256,7 @@ theorem GLₙFₚ_hom_inj [Fact p.Prime] : Function.Injective (GLₙFₚ_hom G p
     assumption
 
 -- The final result: `G` is isomorphic to a subgroup of `GLₙFₚ (Fintype.card G) p`
-theorem G_subgroup_GLₙFₚ (G : Type u) [Group G] [Fintype G] [DecidableEq G] [Fact p.Prime] : G ≃* (GLₙFₚ_hom G p).range := by
+theorem subgroup_GLₙFₚ (p : ℕ) (G : Type u) [Group G] [Fintype G] [DecidableEq G] [Fact p.Prime] : G ≃* (GLₙFₚ_hom G p).range := by
   refine MonoidHom.ofInjective GLₙFₚ_hom_inj
 
 end SubgroupGLₙFₚ
@@ -349,6 +349,7 @@ def UpperTriangularₙₚ (n p : ℕ) : Subgroup (GLₙFₚ n p) := {
 end UpperTriangular
 
 open UpperTriangular
+open SubgroupGLₙFₚ
 
 /-
 ###############################################################################
@@ -365,18 +366,23 @@ noncomputable instance [Fact p.Prime] : Fintype (UpperTriangularₙₚ n p) := F
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/GroupTheory/Coset.html#Subgroup.card_subgroup_dvd_card
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Data/Fintype/Perm.html#Fintype.card_perm
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/LinearIndependent.html
+-- https://people.math.osu.edu/cueto.5/teaching/6111/Au20/files/HW03Solutions.pdf
 lemma UT_card [Fact p.Prime] : Fintype.card (UpperTriangularₙₚ n p) = p ^ (n * (n - 1) / 2) := sorry
 lemma GL_card [Fact p.Prime] : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p^n - p^i) := sorry
 
 
 def UT_Sylow (n p : ℕ) [Fact p.Prime] : Sylow p (GLₙFₚ n p) := {
   carrier := UpperTriangularₙₚ n p,
-  mul_mem' := λ ha hb ↦ ⟨UT_mul_zeros ha hb, UT_mul_ones ha hb⟩,
-  one_mem' := UT_one,
-  inv_mem' := λ h ↦ ⟨ZUD_inv_ZUD h.left, λ _ ↦ UT_inv_ones h⟩
+  mul_mem' := (UpperTriangularₙₚ n p).mul_mem',
+  one_mem' := (UpperTriangularₙₚ n p).one_mem',
+  inv_mem' := (UpperTriangularₙₚ n p).inv_mem',
   isPGroup' := sorry,
   is_maximal' := sorry,
 }
 
 -- Claim from Calegari's proof (might have to add some `Fintype`s)
-def subset_Sylow (G : Type u) [Group G] (H : Subgroup G) (Γ : Type v) [Group Γ] (h : Γ ≃* H) (P : Sylow p G) : Sylow p H := sorry
+def subset_Sylow (G : Type u) [Group G] (H : Subgroup G) (Γ : Type v) [Group Γ] (h : Γ ≃* H) (P : Sylow p G) : Sylow p Γ := sorry
+
+-- Sylow I
+theorem SylowI (p : ℕ) (G : Type u) [Group G] [Fintype G] [DecidableEq G] [Fact p.Prime]: Sylow p G :=
+  subset_Sylow (GLₙFₚ (Fintype.card G) p) (GLₙFₚ_hom G p).range G (subgroup_GLₙFₚ p G) (UT_Sylow (Fintype.card G) p)
