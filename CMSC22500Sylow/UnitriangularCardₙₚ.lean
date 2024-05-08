@@ -1,24 +1,14 @@
-import Mathlib.Data.Nat.Prime
-import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup
-import Mathlib.RingTheory.LittleWedderburn
-import Mathlib.Init.Order.Defs
-import Mathlib.LinearAlgebra.Matrix.Block
-import Mathlib.Algebra.BigOperators.Basic
-import Mathlib.GroupTheory.Perm.Subgroup
-import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
-import Mathlib.GroupTheory.Sylow
-
 import CMSC22500Sylow.GLₙFₚ
 import CMSC22500Sylow.Unitriangularₙₚ
 
 variable {n p : ℕ} [Fact p.Prime]
 
-def IsAboveDiag {n : ℕ} (p : Fin n × Fin n) : Prop := p.fst < p.snd
-def AboveDiag (n : ℕ) := { p : Fin n × Fin n // IsAboveDiag p }
+def IsAboveDiag (n : ℕ) (p : Fin n × Fin n) : Prop := p.fst < p.snd
+def AboveDiag (n : ℕ) := { p : Fin n × Fin n // IsAboveDiag n p }
 
 instance {n : ℕ} : Fintype (Fin n) := Fin.fintype n
 instance {n : ℕ} : Fintype (Fin n × Fin n) := instFintypeProd (Fin n) (Fin n)
-noncomputable instance {n : ℕ} : DecidablePred (@IsAboveDiag n) := Classical.decPred IsAboveDiag
+noncomputable instance {n : ℕ} : DecidablePred (@IsAboveDiag n) := Classical.decPred (IsAboveDiag n)
 noncomputable instance {n : ℕ} : Fintype (AboveDiag n) := Subtype.fintype (@IsAboveDiag n)
 
 def AboveDiag_equiv_impl {n p : ℕ} (f : AboveDiag n → (ZMod p)) : Matrix (Fin n) (Fin n) (ZMod p) :=

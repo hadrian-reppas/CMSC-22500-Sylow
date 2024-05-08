@@ -1,11 +1,3 @@
-import Mathlib.Data.Nat.Prime
-import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup
-import Mathlib.RingTheory.LittleWedderburn
-import Mathlib.Init.Order.Defs
-import Mathlib.LinearAlgebra.Matrix.Block
-import Mathlib.Algebra.BigOperators.Basic
-import Mathlib.GroupTheory.Perm.Subgroup
-import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 import Mathlib.GroupTheory.Sylow
 
 import CMSC22500Sylow.GLₙFₚ
@@ -19,7 +11,7 @@ import CMSC22500Sylow.Unitriangularₙₚ
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/LinearIndependent.html
 -- https://people.math.osu.edu/cueto.5/teaching/6111/Au20/files/HW03Solutions.pdf
 
-lemma GL_card [Fact p.Prime] : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p^n - p^i) := sorry
+lemma GL_card (n p : ℕ) [Fact p.Prime] : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p^n - p^i) := sorry
 
 def UT_Sylow (n p : ℕ) [Fact p.Prime] : Sylow p (GLₙFₚ n p) := {
   carrier := UpperTriangularₙₚ n p,
@@ -34,5 +26,5 @@ def UT_Sylow (n p : ℕ) [Fact p.Prime] : Sylow p (GLₙFₚ n p) := {
 def subset_Sylow (G : Type u) [Group G] (H : Subgroup G) (Γ : Type v) [Group Γ] (h : Γ ≃* H) (P : Sylow p G) : Sylow p Γ := sorry
 
 -- Sylow I
-theorem SylowI (p : ℕ) (G : Type u) [Group G] [Fintype G] [DecidableEq G] [Fact p.Prime] : Sylow p G :=
+theorem SylowI (p : ℕ) [Fact p.Prime] (G : Type u) [Group G] [Fintype G] [DecidableEq G] : Sylow p G :=
   subset_Sylow (GLₙFₚ (Fintype.card G) p) (GLₙFₚ_hom G p).range G (subgroup_GLₙFₚ p G) (UT_Sylow (Fintype.card G) p)

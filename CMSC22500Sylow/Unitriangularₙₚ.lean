@@ -1,12 +1,4 @@
-import Mathlib.Data.Nat.Prime
-import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup
-import Mathlib.RingTheory.LittleWedderburn
-import Mathlib.Init.Order.Defs
 import Mathlib.LinearAlgebra.Matrix.Block
-import Mathlib.Algebra.BigOperators.Basic
-import Mathlib.GroupTheory.Perm.Subgroup
-import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
-import Mathlib.GroupTheory.Sylow
 
 import CMSC22500Sylow.GLₙFₚ
 
