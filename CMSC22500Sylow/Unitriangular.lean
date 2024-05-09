@@ -1,6 +1,6 @@
 import Mathlib.LinearAlgebra.Matrix.Block
 
-import CMSC22500Sylow.GLₙFₚ
+import CMSC22500Sylow.GLnFp
 
 variable {n p : ℕ} [Fact p.Prime] {M N : GLₙFₚ n p}
 

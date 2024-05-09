@@ -1,8 +1,8 @@
 import Mathlib.GroupTheory.Sylow
 
-import CMSC22500Sylow.GLₙFₚ
-import CMSC22500Sylow.SubgroupGLₙFₚ
-import CMSC22500Sylow.Unitriangularₙₚ
+import CMSC22500Sylow.GLnFp
+import CMSC22500Sylow.SubgroupGLnFp
+import CMSC22500Sylow.Unitriangular
 
 -- I think these are the right sizes
 -- We might not need these if we can prove p-Sylowness directly

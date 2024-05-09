@@ -1,6 +1,6 @@
 import Mathlib.GroupTheory.Perm.Subgroup
 
-import CMSC22500Sylow.GLₙFₚ
+import CMSC22500Sylow.GLnFp
 
 -- Some variables to make our life easier
 universe u v

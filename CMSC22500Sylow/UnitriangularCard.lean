@@ -1,5 +1,5 @@
-import CMSC22500Sylow.GLₙFₚ
-import CMSC22500Sylow.Unitriangularₙₚ
+import CMSC22500Sylow.GLnFp
+import CMSC22500Sylow.Unitriangular
 
 variable {n p : ℕ} [Fact p.Prime]
 
@@ -150,6 +150,147 @@ def lift_inj : Function.Injective (@lift n) := by
   apply Subtype.eq
   exact Prod.ext h.left h.right
 
+lemma baz₀ {a b : ℕ} (hb : Even b) : a / 2 + b / 2 = (a + b) / 2 := by
+  refine (Nat.add_div_of_dvd_left ?hca).symm
+  exact even_iff_two_dvd.mp hb
+
+lemma baz (n : ℕ) : n + n * (n - 1) / 2 = n.succ * n / 2 := by
+  calc
+    n + n * (n - 1) / 2         = n * 2 / 2 + n * (n - 1) / 2 := by
+      have h₁ : n = n * 2 / 2 := by refine Nat.eq_div_of_mul_eq_left ?hc rfl; simp
+      nth_rewrite 1 [h₁]
+      rfl
+    n * 2 / 2 + n * (n - 1) / 2 = (n * 2 + n * (n - 1)) / 2   := by
+      have h₁ : Even (n * (n - 1)) := Nat.even_mul_pred_self n
+      exact baz₀ h₁
+    (n * 2 + n * (n - 1)) / 2   = n * (2 + (n - 1)) / 2       := by rw [Nat.left_distrib]
+    n * (2 + (n - 1)) / 2       = n * (n + 1) / 2             := by
+      cases n
+      case zero => rfl
+      case succ n' =>
+        simp
+        have h₁ : n'.succ + 1 = 2 + n' := by linarith
+        rw [h₁]
+    n * (n + 1) / 2             = (n + 1) * n / 2             := by rw [Nat.mul_comm]
+
+lemma cp {P Q : Prop} (h : P ↔ Q) : ¬P ↔ ¬Q := by exact not_congr h
+
+lemma blah {a b : ℕ} (h₁ : a < b) (h₂ : b < a.succ) : False :=
+  have h₃ : b ≤ a := Nat.le_of_lt_succ h₂
+  have h₄ : ¬a < b := Nat.not_lt.mpr h₃
+  h₄ h₁
+
+def blingo {k : ℕ} (x : Fin k) : AboveDiag k.succ := {
+  val := (Fin.mk x (Fin.find.proof_6 k x), Fin.last k),
+  property := by
+    unfold IsAboveDiag at *
+    unfold Fin.last
+    simp
+}
+
+lemma blingo_inj {k : ℕ} : Function.Injective (@blingo k) := by
+  intro x y h
+  unfold blingo at *
+  have h₁ := congrArg Subtype.val h
+  simp at *
+  exact Fin.eq_of_val_eq h₁
+
+lemma image_card (k : ℕ) : (Finset.image (@lift k) Finset.univ)ᶜ.card = k := by
+  let im := Finset.image (@lift k) Finset.univ
+  have imh : Finset.image (@lift k) Finset.univ = im := rfl
+  rw [imh]
+  have h₁ : ∀ y, y.val.snd < k ↔ y ∈ im := by
+    intro y
+    apply Iff.intro
+    · intro h
+      refine Finset.mem_image.mpr ?_
+      let x : AboveDiag k := ⟨
+        (
+          ⟨y.val.fst.val, by
+            have h₁ := y.property
+            unfold IsAboveDiag at *
+            exact Nat.lt_trans h₁ h⟩,
+          ⟨y.val.snd.val, by assumption⟩,
+        ),
+        by
+          unfold AboveDiag at *
+          unfold IsAboveDiag at *
+          have h := y.property
+          simp at *
+          assumption
+      ⟩
+      existsi x
+      constructor
+      · exact Finset.mem_univ x
+      · unfold lift; simp
+    · intro h
+      by_contra! h'
+      have ⟨x, ⟨_, hx⟩⟩ := Finset.mem_image.mp h
+      unfold lift at hx
+      simp at *
+      have h₂ := congrArg Subtype.val hx
+      have h₃ := congrArg Prod.snd h₂
+      simp at *
+      have h₄ := Fin.castSucc_lt_last x.val.2
+      rw [h₃] at h₄
+      have h₅ : k < ↑(Fin.last k) := LE.le.trans_lt h' h₄
+      unfold Fin.last at h₅
+      simp at h₅
+  have h₂ : ∀ y, y.val.snd = k ↔ y ∈ imᶜ := by
+    intro y
+    apply Iff.intro <;> intro h
+    · have h₃ : ¬y.val.2.val < k := eq_iff_not_lt_of_le.mp λ _ ↦ id h.symm
+      have h₄ := (cp (h₁ y)).mp h₃
+      simp
+      exact h₄
+    · have h₃ : ¬y ∈ im := Finset.mem_compl.mp h
+      have h₄ := (cp (h₁ y)).mpr h₃
+      have h₅ : y.val.2.val ≥ k := Nat.le_of_not_lt h₄
+      cases Nat.lt_or_eq_of_le h₅
+      case inl h₆ =>
+        exfalso
+        have h₇ := y.val.snd.isLt
+        exact blah h₆ h₇
+      case inr h₆ => exact h₆.symm
+  have h₃ : Finset.image (@blingo k) Finset.univ = imᶜ := by
+    refine Finset.ext_iff.mpr ?_
+    intro y
+    apply Iff.intro <;> intro h
+    · apply (h₂ y).mp
+      have h₃ : ∀ x ∈ (@Finset.univ (Fin k) instFintypeFin), (blingo x).val.snd.val = k := by
+        intro x _
+        unfold blingo
+        simp
+      have h₄ : (∀ b ∈ Finset.image (@blingo k) Finset.univ, b.val.snd.val = k) := Finset.forall_image.mpr h₃
+      exact h₄ y h
+    · have h₃ := (h₂ y).mpr h
+      apply Finset.mem_image.mpr
+      let x : Fin k := ⟨y.val.1.val, by
+        have h₄ := y.property
+        unfold IsAboveDiag at h₄
+        have h₅ : y.val.1.val < y.val.2.val := by exact h₄
+        rw [h₃] at h₅
+        assumption⟩
+      existsi x
+      constructor
+      · exact Finset.mem_univ x
+      · unfold blingo
+        unfold Fin.last
+        simp at *
+        apply Subtype.eq
+        simp at *
+        apply Prod.ext
+        · simp
+        · simp
+          apply Fin.eq_of_val_eq
+          simp
+          exact h₃.symm
+  have h₄ : Finset.card (Finset.univ : Finset (Fin k)) = k := Finset.card_fin k
+  have h₅ := Finset.card_image_of_injective Finset.univ (@blingo_inj k)
+  rw [←h₃]
+  rw [h₅]
+  assumption
+
 lemma AboveDiag_card (n : ℕ) : Fintype.card (AboveDiag n) = n * (n - 1) / 2 := by
   induction n
   case zero => rfl
@@ -162,11 +303,8 @@ lemma AboveDiag_card (n : ℕ) : Fintype.card (AboveDiag n) = n * (n - 1) / 2 :=
     rw [imh] at h₁
     have h₂ := Finset.card_compl_add_card im
     rw [h₁] at h₂
-    have h₃ : imᶜ.card = k := sorry
-    rw [←h₂, h₃]
-    --                                                   v this equality is not always true for floor division, but is in this case because 2 * k and k * (k - 1) are divisble by 2
-    -- k + k * (k - 1) / 2 = k * 2 / 2 + k * (k - 1) / 2 = (k * 2 + k * (k - 1)) / 2 = k * (2 + (k - 1)) / 2 = k * (k + 1) / 2 = (k + 1) * k / 2
-    sorry
+    rw [←h₂, image_card k]
+    exact baz k
 
 lemma ZMod_card (p : ℕ) [Fact p.Prime] : Fintype.card (ZMod p) = p := ZMod.card p
 noncomputable instance fin_funs {n : ℕ} [Fact p.Prime] : Fintype (AboveDiag n → ZMod p) := Fintype.ofFinite (AboveDiag n → ZMod p)
@@ -176,6 +314,6 @@ lemma AboveDiag_fun_card (n p : ℕ) [Fact p.Prime] : Fintype.card (AboveDiag n 
 noncomputable instance [Fact p.Prime] : Fintype (Unitriangularₙₚ n p) := Fintype.ofFinite (Unitriangularₙₚ n p)
 
 -- Yay!
-lemma UT_card (n p : ℕ) [Fact p.Prime] : Fintype.card (Unitriangularₙₚ n p) = p ^ (n * (n - 1) / 2) := by
+lemma Unitriangular_card (n p : ℕ) [Fact p.Prime] : Fintype.card (Unitriangularₙₚ n p) = p ^ (n * (n - 1) / 2) := by
   rw [←Fintype.card_congr (AboveDiag_equiv n p)]
   exact AboveDiag_fun_card n p
