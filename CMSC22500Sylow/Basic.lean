@@ -14,10 +14,10 @@ import CMSC22500Sylow.Unitriangularₙₚ
 lemma GL_card (n p : ℕ) [Fact p.Prime] : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p^n - p^i) := sorry
 
 def UT_Sylow (n p : ℕ) [Fact p.Prime] : Sylow p (GLₙFₚ n p) := {
-  carrier := UpperTriangularₙₚ n p,
-  mul_mem' := (UpperTriangularₙₚ n p).mul_mem',
-  one_mem' := (UpperTriangularₙₚ n p).one_mem',
-  inv_mem' := (UpperTriangularₙₚ n p).inv_mem',
+  carrier := Unitriangularₙₚ n p,
+  mul_mem' := (Unitriangularₙₚ n p).mul_mem',
+  one_mem' := (Unitriangularₙₚ n p).one_mem',
+  inv_mem' := (Unitriangularₙₚ n p).inv_mem',
   isPGroup' := sorry,
   is_maximal' := sorry,
 }
