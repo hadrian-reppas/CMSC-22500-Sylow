@@ -19,9 +19,11 @@ def UT_Sylow (n p : ℕ) [Fact p.Prime] : Sylow p (GLₙFₚ n p) := {
   is_maximal' := sorry,
 }
 
--- Claim from Calegari's proof
-def subset_Sylow (G : Type u) [Group G] (H : Subgroup G) (Γ : Type v) [Group Γ] (h : Γ ≃* H) (P : Sylow p G) : Sylow p Γ := sorry
+-- Calegari's lemma: If `H ⊆ G`, `Γ ≃ H` and `P ⊆ G` is a `p`-Sylow, then we can
+-- construct a `p`-Sylow of `Γ`.
+lemma Calegari'sLemma (p : ℕ) [Fact p.Prime] (G : Type u) [Group G] (H : Subgroup G)
+  (Γ : Type v) [Group Γ] (h : Γ ≃* H) (P : Sylow p G) : Sylow p Γ := sorry
 
 -- Sylow I
 theorem SylowI (p : ℕ) [Fact p.Prime] (G : Type u) [Group G] [Fintype G] [DecidableEq G] : Sylow p G :=
-  subset_Sylow (GLₙFₚ (Fintype.card G) p) (GLₙFₚ_hom G p).range G (subgroup_GLₙFₚ p G) (UT_Sylow (Fintype.card G) p)
+  Calegari'sLemma p (GLₙFₚ (Fintype.card G) p) (GLₙFₚ_hom G p).range G (subgroup_GLₙFₚ p G) (UT_Sylow (Fintype.card G) p)
