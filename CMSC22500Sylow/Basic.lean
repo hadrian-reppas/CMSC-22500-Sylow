@@ -4,14 +4,11 @@ import CMSC22500Sylow.GLnFp
 import CMSC22500Sylow.SubgroupGLnFp
 import CMSC22500Sylow.Unitriangular
 
--- I think these are the right sizes
--- We might not need these if we can prove p-Sylowness directly
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/GroupTheory/Coset.html#Subgroup.card_subgroup_dvd_card
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Data/Fintype/Perm.html#Fintype.card_perm
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/LinearIndependent.html
+-- Given `GLₙFₚ_card` and `Unitriangular_card`, we have to prove that `Unitriangularₙₚ`
+-- is a `p`-Sylow of `GLₙFₚ`. I think we can use the following proof along with the following
+-- lemma from Mathlib to get the multiplicity of `p`.
 -- https://people.math.osu.edu/cueto.5/teaching/6111/Au20/files/HW03Solutions.pdf
-
-lemma GL_card (n p : ℕ) [Fact p.Prime] : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p^n - p^i) := sorry
+-- https://leanprover-community.github.io/mathlib4_docs/Mathlib/RingTheory/Multiplicity.html#multiplicity.Finset.prod
 
 def UT_Sylow (n p : ℕ) [Fact p.Prime] : Sylow p (GLₙFₚ n p) := {
   carrier := Unitriangularₙₚ n p,
