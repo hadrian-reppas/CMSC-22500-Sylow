@@ -45,6 +45,6 @@ def nkM_equiv : @FullRankₙₖₚ n p n ≃ GLₙFₚ n p:= {
   right_inv := right_inv,
 }
 
-lemma GLₙFₚ_card : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p^n - p^i) := by
+lemma GLₙFₚ_card : Fintype.card (GLₙFₚ n p) = Finset.prod (Finset.range n) (λ i ↦ p ^ n - p ^ i) := by
   rw [←Fintype.card_congr nkM_equiv]
   exact nkM_card n
