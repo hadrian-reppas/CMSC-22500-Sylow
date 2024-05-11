@@ -1,8 +1,9 @@
-import CMSC22500Sylow.GLnFp
 import Mathlib.Data.Matrix.Rank
 import Mathlib.Data.Matrix.Basic
 import Mathlib.Data.Set.Defs
 import Mathlib.LinearAlgebra.Basis
+
+import CMSC22500Sylow.GLnFp
 
 -- https://people.math.osu.edu/cueto.5/teaching/6111/Au20/files/HW03Solutions.pdf
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/GroupTheory/Coset.html#Subgroup.card_subgroup_dvd_card
@@ -25,17 +26,17 @@ lemma basis_card (k : ℕ) : Fintype.card (nkMBasis k p) = Finset.prod (Finset.r
 
     sorry
 
-def basis_equiv_to : (nkMBasis n p) -> (GLₙFₚ n p) := sorry
+def basis_equiv_to (n p : ℕ) [Fact p.Prime] : (nkMBasis n p) -> (GLₙFₚ n p) := sorry
 
-def basis_equiv_inv : (GLₙFₚ n p) -> (nkMBasis n p) := sorry
+def basis_equiv_inv (n p : ℕ) [Fact p.Prime] : (GLₙFₚ n p) -> (nkMBasis n p) := sorry
 
-lemma left_inv  : Function.LeftInverse (@basis_equiv_inv n p) (@basis_equiv_to n p) := sorry
+lemma left_inv  : Function.LeftInverse (basis_equiv_inv n p) (basis_equiv_to n p) := sorry
 
-lemma right_inv : Function.RightInverse (@basis_equiv_inv n p) (@basis_equiv_to n p) := sorry
+lemma right_inv : Function.RightInverse (basis_equiv_inv n p) (basis_equiv_to n p) := sorry
 
-def basis_equiv : (nkMBasis n p) ≃ GLₙFₚ n p:= {
-  toFun := basis_equiv_to
-  invFun := basis_equiv_inv,
+def basis_equiv [Fact p.Prime] : (nkMBasis n p) ≃ GLₙFₚ n p:= {
+  toFun := basis_equiv_to n p,
+  invFun := basis_equiv_inv n p,
   left_inv := left_inv,
   right_inv := right_inv,
 }
