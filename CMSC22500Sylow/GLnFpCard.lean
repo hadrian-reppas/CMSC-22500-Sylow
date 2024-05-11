@@ -12,7 +12,7 @@ import CMSC22500Sylow.GLnFp
 
 variable {n p : ℕ} [Fact p.Prime]
 
-def nkMBasis (k p : ℕ) [Fact p.Prime] : Type := Basis (Fin k) ℤ (Fin k -> ZMod p)
+def nkMBasis (k p : ℕ) [Fact p.Prime] : Type := Basis (Fin k) (ZMod p) (Fin k -> ZMod p)
 
 instance (k : ℕ) : Fintype (nkMBasis k p) := sorry
 
@@ -23,18 +23,36 @@ lemma basis_card (k : ℕ) : Fintype.card (nkMBasis k p) = Finset.prod (Finset.r
     sorry
   case succ k ih =>
     unfold nkMBasis at *
+    rw [Finset.range_succ]
+    rw [Finset.prod_insert]
+    . rw [<-ih]
+      sorry
+    . exact Finset.not_mem_range_self
 
-    sorry
+def my_linear_equiv := LinearMap.GeneralLinearGroup.generalLinearEquiv (ZMod p) (Fin n -> ZMod p)
 
-def basis_equiv_to (n p : ℕ) [Fact p.Prime] : (nkMBasis n p) -> (GLₙFₚ n p) := sorry
+noncomputable def basis_equiv_to (n p : ℕ) [Fact p.Prime] : (nkMBasis n p) -> (GLₙFₚ n p) :=
+  λ b ↦
+    (Matrix.GeneralLinearGroup.toLinear.symm) (my_linear_equiv.symm b.equivFun)
 
-def basis_equiv_inv (n p : ℕ) [Fact p.Prime] : (GLₙFₚ n p) -> (nkMBasis n p) := sorry
+noncomputable def basis_equiv_inv (n p : ℕ) [Fact p.Prime] : (GLₙFₚ n p) -> (nkMBasis n p) :=
+  λ M ↦
+    Basis.ofEquivFun (my_linear_equiv (Matrix.GeneralLinearGroup.toLinear M))
 
-lemma left_inv  : Function.LeftInverse (basis_equiv_inv n p) (basis_equiv_to n p) := sorry
+lemma left_inv  : Function.LeftInverse (basis_equiv_inv n p) (basis_equiv_to n p) := by
+  unfold Function.LeftInverse
+  unfold basis_equiv_inv
+  unfold basis_equiv_to
+  simp
 
-lemma right_inv : Function.RightInverse (basis_equiv_inv n p) (basis_equiv_to n p) := sorry
+lemma right_inv : Function.RightInverse (basis_equiv_inv n p) (basis_equiv_to n p) := by
+  unfold Function.RightInverse
+  unfold Function.LeftInverse
+  unfold basis_equiv_to
+  unfold basis_equiv_inv
+  simp
 
-def basis_equiv [Fact p.Prime] : (nkMBasis n p) ≃ GLₙFₚ n p:= {
+noncomputable def basis_equiv [Fact p.Prime] : (nkMBasis n p) ≃ GLₙFₚ n p:= {
   toFun := basis_equiv_to n p,
   invFun := basis_equiv_inv n p,
   left_inv := left_inv,
