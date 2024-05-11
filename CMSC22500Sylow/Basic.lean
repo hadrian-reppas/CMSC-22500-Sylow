@@ -15,7 +15,13 @@ lemma multiplicity_0 {p i : ℕ} (hp : p.Prime) (hi : i > 0) : multiplicity p (p
   refine multiplicity.multiplicity_eq_zero.mpr ?_
   have h₁ : p ∣ p ^ i := by refine dvd_pow_self p (Nat.not_eq_zero_of_lt hi)
   have h₂ : p > 1 := Nat.Prime.one_lt hp
-  admit
+  intro h
+  have h₄ : p ∣ p ^ i - (p ^ i - 1) := Nat.dvd_sub' h₁ h
+  have h₅ : p ^ i - (p ^ i - 1) = 1 := by
+    refine Nat.sub_sub_self ?h
+    exact Nat.one_le_pow i p (Nat.zero_lt_of_lt h₂)
+  rw [h₅] at h₄
+  exact hp.not_unit (isUnit_of_dvd_one h₄)
 
 lemma diff_multiplicity {n p i : ℕ} (pp : Prime p) (h : i < n) : multiplicity p (p ^ n - p ^ i) = i := by
   have h₁ : p ^ n - p ^ i = p ^ i * (p ^ (n - i) - 1) := by

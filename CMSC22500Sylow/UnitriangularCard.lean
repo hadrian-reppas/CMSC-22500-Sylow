@@ -65,7 +65,7 @@ def AboveDiag_equiv' (f : AboveDiag n → (ZMod p)) : Unitriangularₙₚ n p :=
 def AboveDiag_inv (M : Unitriangularₙₚ n p) (q : AboveDiag n) : (ZMod p) :=
   M.val q.val.fst q.val.snd
 
-lemma left_inv (n p : ℕ) [hp : Fact p.Prime] : Function.LeftInverse (@AboveDiag_inv n p hp) (@AboveDiag_equiv' n p hp) := by
+lemma left_inv' (n p : ℕ) [hp : Fact p.Prime] : Function.LeftInverse (@AboveDiag_inv n p hp) (@AboveDiag_equiv' n p hp) := by
   refine Function.leftInverse_iff_comp.mpr ?_
   unfold AboveDiag_equiv'
   unfold AboveDiag_equiv₀
@@ -96,7 +96,7 @@ lemma fin_le_helper {i j : Fin n} (h₁ : ¬i = j) (h₂ : ¬i < j) : j < i := b
     | .inl h => (h₁ h).elim
     | .inr h => (h₂ h).elim)
 
-lemma right_inv (n p : ℕ) [hp : Fact p.Prime] : Function.RightInverse (@AboveDiag_inv n p hp) (@AboveDiag_equiv' n p hp) := by
+lemma right_inv' (n p : ℕ) [hp : Fact p.Prime] : Function.RightInverse (@AboveDiag_inv n p hp) (@AboveDiag_equiv' n p hp) := by
   refine Function.rightInverse_iff_comp.mpr ?_
   unfold AboveDiag_equiv'
   unfold AboveDiag_equiv₀
@@ -129,8 +129,8 @@ lemma right_inv (n p : ℕ) [hp : Fact p.Prime] : Function.RightInverse (@AboveD
 def AboveDiag_equiv (n p : ℕ) [Fact p.Prime] : (AboveDiag n → ZMod p) ≃ Unitriangularₙₚ n p := {
   toFun := AboveDiag_equiv',
   invFun := AboveDiag_inv,
-  left_inv := left_inv n p,
-  right_inv := right_inv n p,
+  left_inv := left_inv' n p,
+  right_inv := right_inv' n p,
 }
 
 def lift {n : ℕ} (i : AboveDiag n) : AboveDiag n.succ := ⟨(i.val.fst, i.val.snd), by
