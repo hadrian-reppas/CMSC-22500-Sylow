@@ -17,9 +17,12 @@ def nkMBasis (n k p : ℕ) [Fact p.Prime] : Type := Basis (Fin k) (ZMod p) (Fin 
 
 instance (k : ℕ) : Fintype (nkMBasis n k p) := sorry
 
+-- TODO: figure out what to do here
+-- def my_hli (v : Fin n -> ZMod p) : Prop := ∀(c : ZMod p), (∀ x ∈ (Fin n -> ZMod p)), c • v + x = 0 → c = 0
+-- def my_hsp (v : Fin n -> ZMod p) : Prop := ∀(z : Fin n -> ZMod p), ∃ (c : ZMod p), ((z + c • v) ∈ (Fin n -> ZMod p))
+
 -- def independent_column (k : ℕ) (b : nkMBasis n k p) : Type :=
---   {v : Fin n -> ZMod p // ∀(c : R), ∀ x ∈ N, c • y + x = 0 → c = 0}
---   (hli : ∀(c : R), ∀ x ∈ N, c • y + x = 0 → c = 0)
+--   {v : Fin n -> ZMod p // (my_hli v /\ my_hsp v)}
 
 lemma basis_card (k : ℕ) : Fintype.card (nkMBasis n k p) = Finset.prod (Finset.range k) (λ i ↦ p^n - p^i) := by
   induction k
