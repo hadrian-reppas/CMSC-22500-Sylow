@@ -20,13 +20,10 @@ def nkM_li_vectors (n k p : ℕ) [Fact p.Prime] : Type := {v : (Fin k -> (Fin n 
 
 instance (k : ℕ) : Fintype (nkM_li_vectors n k p) := sorry
 instance : Fintype (myBasis n p) := sorry
+instance (k : ℕ) (v : nkM_li_vectors n k p) : Fintype {x // x ∉ Submodule.span (ZMod p) (Set.range v.1)} := sorry
 
--- TODO: figure out what to do here
--- def my_hli (v : Fin n -> ZMod p) : Prop := ∀(c : ZMod p), (∀ x ∈ (Fin n -> ZMod p)), c • v + x = 0 → c = 0
--- def my_hsp (v : Fin n -> ZMod p) : Prop := ∀(z : Fin n -> ZMod p), ∃ (c : ZMod p), ((z + c • v) ∈ (Fin n -> ZMod p))
-
--- def independent_column (k : ℕ) (b : nkMBasis n k p) : Type :=
---   {v : Fin n -> ZMod p // (my_hli v /\ my_hsp v)}
+lemma excluded_submodule_card (k : ℕ) (v : nkM_li_vectors n k p) : Fintype.card {x // x ∉ Submodule.span (ZMod p) (Set.range v.1)} = p^n - p^k :=
+  sorry
 
 lemma basis_card (k : ℕ) : Fintype.card (nkM_li_vectors n k p) = Finset.prod (Finset.range k) (λ i ↦ p^n - p^i) := by
   induction k
