@@ -9,14 +9,19 @@ import CMSC22500Sylow.GLnFp
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/GroupTheory/Coset.html#Subgroup.card_subgroup_dvd_card
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Data/Fintype/Perm.html#Fintype.card_perm
 -- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/LinearIndependent.html
+-- Basis.mkFinCons
 
 variable {n p : ℕ} [Fact p.Prime]
 
-def nkMBasis (k p : ℕ) [Fact p.Prime] : Type := Basis (Fin k) (ZMod p) (Fin k -> ZMod p)
+def nkMBasis (n k p : ℕ) [Fact p.Prime] : Type := Basis (Fin k) (ZMod p) (Fin n -> ZMod p)
 
-instance (k : ℕ) : Fintype (nkMBasis k p) := sorry
+instance (k : ℕ) : Fintype (nkMBasis n k p) := sorry
 
-lemma basis_card (k : ℕ) : Fintype.card (nkMBasis k p) = Finset.prod (Finset.range k) (λ i ↦ p^n - p^i) := by
+-- def independent_column (k : ℕ) (b : nkMBasis n k p) : Type :=
+--   {v : Fin n -> ZMod p // ∀(c : R), ∀ x ∈ N, c • y + x = 0 → c = 0}
+--   (hli : ∀(c : R), ∀ x ∈ N, c • y + x = 0 → c = 0)
+
+lemma basis_card (k : ℕ) : Fintype.card (nkMBasis n k p) = Finset.prod (Finset.range k) (λ i ↦ p^n - p^i) := by
   induction k
   case zero =>
     simp
@@ -31,11 +36,11 @@ lemma basis_card (k : ℕ) : Fintype.card (nkMBasis k p) = Finset.prod (Finset.r
 
 def my_linear_equiv := LinearMap.GeneralLinearGroup.generalLinearEquiv (ZMod p) (Fin n -> ZMod p)
 
-noncomputable def basis_equiv_to (n p : ℕ) [Fact p.Prime] : (nkMBasis n p) -> (GLₙFₚ n p) :=
+noncomputable def basis_equiv_to (n p : ℕ) [Fact p.Prime] : (nkMBasis n n p) -> (GLₙFₚ n p) :=
   λ b ↦
     (Matrix.GeneralLinearGroup.toLinear.symm) (my_linear_equiv.symm b.equivFun)
 
-noncomputable def basis_equiv_inv (n p : ℕ) [Fact p.Prime] : (GLₙFₚ n p) -> (nkMBasis n p) :=
+noncomputable def basis_equiv_inv (n p : ℕ) [Fact p.Prime] : (GLₙFₚ n p) -> (nkMBasis n n p) :=
   λ M ↦
     Basis.ofEquivFun (my_linear_equiv (Matrix.GeneralLinearGroup.toLinear M))
 
@@ -52,7 +57,7 @@ lemma right_inv : Function.RightInverse (basis_equiv_inv n p) (basis_equiv_to n 
   unfold basis_equiv_inv
   simp
 
-noncomputable def basis_equiv [Fact p.Prime] : (nkMBasis n p) ≃ GLₙFₚ n p:= {
+noncomputable def basis_equiv [Fact p.Prime] : (nkMBasis n n p) ≃ GLₙFₚ n p:= {
   toFun := basis_equiv_to n p,
   invFun := basis_equiv_inv n p,
   left_inv := left_inv,
