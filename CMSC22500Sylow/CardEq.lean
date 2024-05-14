@@ -3,15 +3,12 @@ import CMSC22500Sylow.UnitriangularCard
 
 lemma multiplicity_0 {p i : ℕ} (hp : p.Prime) (hi : i > 0) : multiplicity p (p ^ i - 1) = 0 := by
   refine multiplicity.multiplicity_eq_zero.mpr ?_
-  have h₁ : p ∣ p ^ i := by refine dvd_pow_self p (Nat.not_eq_zero_of_lt hi)
-  have h₂ : p > 1 := Nat.Prime.one_lt hp
   intro h
-  have h₄ : p ∣ p ^ i - (p ^ i - 1) := Nat.dvd_sub' h₁ h
-  have h₅ : p ^ i - (p ^ i - 1) = 1 := by
-    refine Nat.sub_sub_self ?h
-    exact Nat.one_le_pow i p (Nat.zero_lt_of_lt h₂)
-  rw [h₅] at h₄
-  exact hp.not_unit (isUnit_of_dvd_one h₄)
+  have h₁ : p ∣ p ^ i := by refine dvd_pow_self p (Nat.not_eq_zero_of_lt hi)
+  have h₂ : p ∣ p ^ i - (p ^ i - 1) := Nat.dvd_sub' h₁ h
+  have h₃ : p ^ i - (p ^ i - 1) = 1 := Nat.sub_sub_self (Nat.one_le_pow i p (Nat.zero_lt_of_lt (Nat.Prime.pos hp)))
+  rw [h₃] at h₂
+  exact hp.not_unit (isUnit_of_dvd_one h₂)
 
 lemma diff_multiplicity {n p i : ℕ} (pp : Prime p) (h : i < n) : multiplicity p (p ^ n - p ^ i) = i := by
   have h₁ : p ^ n - p ^ i = p ^ i * (p ^ (n - i) - 1) := by
@@ -38,8 +35,7 @@ lemma triangle {n : ℕ} : (Finset.sum (Finset.range n) fun x ↦ (x : PartENat)
   case zero => rfl
   case succ k ih =>
     simp
-    rw [Finset.sum_range_succ_comm, ih]
-    rw [←Nat.cast_add]
+    rw [Finset.sum_range_succ_comm, ih, ←Nat.cast_add]
     apply congrArg Nat.cast
     nth_rewrite 1 [←Nat.mul_div_cancel k Nat.zero_lt_two]
     have h₂ : k * 2 / 2 + k * (k - 1) / 2 = (k * 2 + k * (k - 1)) / 2 := by
@@ -56,13 +52,11 @@ lemma triangle {n : ℕ} : (Finset.sum (Finset.range n) fun x ↦ (x : PartENat)
       rw [Nat.add_comm]
 
 lemma p_multiplicity {n p : ℕ} [pp : Fact p.Prime] : multiplicity p (Finset.prod (Finset.range n) λ i ↦ p ^ n - p ^ i) = multiplicity p (p ^ (n * (n - 1) / 2)) := by
-  rw [multiplicity.Finset.prod (Nat.Prime.prime pp.out) (Finset.range n) (λ i ↦ p ^ n - p ^ i)]
-  rw [multiplicity.multiplicity_pow_self (Nat.Prime.ne_zero pp.out) (Prime.not_unit (Nat.Prime.prime pp.out))]
-  have h₁ : ∀ i ∈ Finset.range n, multiplicity p (p ^ n - p ^ i) = i := by
-    intro i h
-    have h₁ : i < n := List.mem_range.mp h
-    exact diff_multiplicity (Nat.Prime.prime pp.out) h₁
-  rw [Finset.sum_congr rfl h₁]
+  rw [
+    multiplicity.Finset.prod (Nat.Prime.prime pp.out) (Finset.range n) (λ i ↦ p ^ n - p ^ i),
+    multiplicity.multiplicity_pow_self (Nat.Prime.ne_zero pp.out) (Prime.not_unit (Nat.Prime.prime pp.out)),
+    Finset.sum_congr rfl (λ i h ↦ diff_multiplicity (Nat.Prime.prime pp.out) (List.mem_range.mp h)),
+  ]
   exact triangle
 
 lemma card_eq {n p : ℕ} [pp : Fact p.Prime] : Fintype.card (Unitriangularₙₚ n p) = p ^ (Fintype.card (GLₙFₚ n p)).factorization p := by
