@@ -15,22 +15,49 @@ noncomputable instance {n p k : ℕ} [Fact p.Prime] : Fintype (Independent n p k
 
 def NotInRange {n p k : ℕ} [Fact p.Prime] (M : Independent n p k) := { v // v ∉ LinearMap.range M.val.vecMulLinear }
 
--- Given a matrix `M` and a vector `v` not in `M`'s range, this function adds `v` as a row to `M`
-def cons {n p k : ℕ} [Fact p.Prime] (M : Independent n p k) (v : NotInRange M) : Independent n p k.succ := sorry
+-- Adding a row that is linearly independent of existing rows gives a max rank matrix
+lemma li_cons_max_rank {n p k : ℕ} [Fact p.Prime] (h : k < n) (M : Independent n p k) (v : NotInRange M) : MaxRank (Matrix.vecCons v.val M.val) := sorry
 
--- This removes the first row of `M`
-def tail {n p k : ℕ} (M : Independent n p k.succ) : Independent n p k := {
-  val := Matrix.vecTail M.val,
-  property := sorry,
+-- Given a matrix `M` and a vector `v` not in `M`'s range, this function adds `v` as a row to `M`
+def cons {n p k : ℕ} [Fact p.Prime] (h : k < n) (M : Independent n p k) (v : NotInRange M) : Independent n p k.succ := {
+  val := Matrix.vecCons v.val M.val,
+  property := li_cons_max_rank h M v,
 }
 
+-- If we remove the first row from a matrix with max rank, we get a matrix with max rank
+lemma max_rank_tail {n p k : ℕ} [Fact p.Prime] (h : k < n) (M : Independent n p k.succ) : MaxRank (Matrix.vecTail M.val) := sorry
+
+-- This removes the first row of `M`
+def tail {n p k : ℕ} [Fact p.Prime] (h : k < n) (M : Independent n p k.succ) : Independent n p k := {
+  val := Matrix.vecTail M.val,
+  property := max_rank_tail h M,
+}
+
+-- The first row of a matrix with max rank is linearly independent of subsequent rows
+lemma head_not_in_range {n p k : ℕ} [Fact p.Prime] (h : k < n) (M : Independent n p k.succ) : Matrix.vecHead M.val ∉ LinearMap.range (Matrix.vecMulLinear (tail h M).val) := sorry
+
 -- This returns the first row of `M`, which will not be in the range of `tail M`
-def head {n p k : ℕ} [Fact p.Prime] (M : Independent n p k.succ) : NotInRange (tail M) := sorry
+def head {n p k : ℕ} [Fact p.Prime] (h : k < n) (M : Independent n p k.succ) : NotInRange (tail h M) := {
+  val := Matrix.vecHead M.val,
+  property := head_not_in_range h M,
+}
 
-def equiv_sigma_fun {n p k : ℕ} [pp : Fact p.Prime] {h : k < n} (M : Independent n p k.succ) : Sigma (@NotInRange n p k pp) := ⟨tail M, head M⟩
-def equiv_sigma_inv {n p k : ℕ} [pp : Fact p.Prime] {h : k < n} (q : Sigma (@NotInRange n p k pp)) : Independent n p k.succ := cons q.fst q.snd
+def equiv_sigma_fun (n p k : ℕ) [pp : Fact p.Prime] (h : k < n) (M : Independent n p k.succ) : Sigma (@NotInRange n p k pp) := ⟨tail h M, head h M⟩
+def equiv_sigma_inv (n p k : ℕ) [pp : Fact p.Prime] (h : k < n) (q : Sigma (@NotInRange n p k pp)) : Independent n p k.succ := cons h q.fst q.snd
 
-lemma equiv_sigma (n p k : ℕ) [pp : Fact p.Prime] (h : k < n) : Independent n p k.succ ≃ Sigma (@NotInRange n p k pp) := sorry
+lemma equiv_sigma (n p k : ℕ) [pp : Fact p.Prime] (h : k < n) : Independent n p k.succ ≃ Sigma (@NotInRange n p k pp) := {
+  toFun := equiv_sigma_fun n p k h,
+  invFun := equiv_sigma_inv n p k h,
+  left_inv := by
+    intro x
+    unfold equiv_sigma_fun
+    unfold equiv_sigma_inv
+    unfold cons
+    unfold tail
+    unfold head
+    simp,
+  right_inv := by intros x; exact rfl,
+}
 
 noncomputable instance {n p k : ℕ} [Fact p.Prime] {M : Independent n p k} : Fintype (NotInRange M) := by
   unfold NotInRange
@@ -83,7 +110,12 @@ lemma Independent_card (n p k : ℕ) [Fact p.Prime] : Fintype.card (Independent 
     rw [Finset.prod_range_succ, ←ih]
     exact blah n p k'
 
-lemma max_rank_iff_invertible {n p : ℕ} [Fact p.Prime] (M : Matrix (Fin n) (Fin n) (ZMod p)) : MaxRank M ↔ IsUnit M := sorry
+lemma max_rank_iff_invertible {n p : ℕ} [Fact p.Prime] (M : Matrix (Fin n) (Fin n) (ZMod p)) : MaxRank M ↔ IsUnit M := by
+  apply Iff.intro <;> intro h
+  · admit
+  · unfold MaxRank
+    rw [Matrix.rank_of_isUnit M h]
+    exact Fintype.card_fin n
 
 lemma foo (n p : ℕ) [Fact p.Prime] : GLₙFₚ n p ≃ Independent n p n := {
   toFun := λ M ↦ {
