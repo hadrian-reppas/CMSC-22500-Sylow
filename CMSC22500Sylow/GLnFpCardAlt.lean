@@ -15,7 +15,7 @@ noncomputable instance {n p k : ℕ} [Fact p.Prime] : Fintype (Independent n p k
 
 def NotInRange {n p k : ℕ} [Fact p.Prime] (M : Independent n p k) := { v // v ∉ LinearMap.range M.val.vecMulLinear }
 
--- Adding a row that is linearly independent of existing rows gives a max rank matrix
+-- Given a `k × n` matrix `M` with rank `k` and a vector `v` not in the span on `M`'s rows, adding `v` as a row to `M` gives a `(k + 1) × n` matrix with rank `k + 1`
 lemma li_cons_max_rank {n p k : ℕ} [Fact p.Prime] (h : k < n) (M : Independent n p k) (v : NotInRange M) : MaxRank (Matrix.vecCons v.val M.val) := sorry
 
 -- Given a matrix `M` and a vector `v` not in `M`'s range, this function adds `v` as a row to `M`
@@ -24,7 +24,7 @@ def cons {n p k : ℕ} [Fact p.Prime] (h : k < n) (M : Independent n p k) (v : N
   property := li_cons_max_rank h M v,
 }
 
--- If we remove the first row from a matrix with max rank, we get a matrix with max rank
+-- If we remove the first row from a `(k + 1) × n` matrix with rank `k + 1`, we get a `k × n` matrix with rank `k`
 lemma max_rank_tail {n p k : ℕ} [Fact p.Prime] (h : k < n) (M : Independent n p k.succ) : MaxRank (Matrix.vecTail M.val) := sorry
 
 -- This removes the first row of `M`
@@ -33,7 +33,7 @@ def tail {n p k : ℕ} [Fact p.Prime] (h : k < n) (M : Independent n p k.succ) :
   property := max_rank_tail h M,
 }
 
--- The first row of a matrix with max rank is linearly independent of subsequent rows
+-- The first row of a `(k + 1) × n` matrix with rank `k + 1` is linearly independent of subsequent rows
 lemma head_not_in_range {n p k : ℕ} [Fact p.Prime] (h : k < n) (M : Independent n p k.succ) : Matrix.vecHead M.val ∉ LinearMap.range (Matrix.vecMulLinear (tail h M).val) := sorry
 
 -- This returns the first row of `M`, which will not be in the range of `tail M`
@@ -63,8 +63,26 @@ noncomputable instance {n p k : ℕ} [Fact p.Prime] {M : Independent n p k} : Fi
   unfold NotInRange
   exact Fintype.ofFinite { v // v ∉ LinearMap.range (Matrix.vecMulLinear M.val) }
 
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/FiniteDimensional.html#LinearMap.finrank_range_add_finrank_ker
-lemma range_card {n p k : ℕ} [Fact p.Prime] (M : Independent n p k) : Fintype.card (NotInRange M) = p ^ n - p ^ k := sorry
+lemma boo {n m : ℕ} (h : n = m) : ↑n = (↑m : Cardinal) := congrArg Nat.cast h
+lemma booi {n m : ℕ} (h : ↑n = (↑m : Cardinal)) : n = m := Cardinal.natCast_inj.mp h
+
+lemma range_card {n p k : ℕ} [pp : Fact p.Prime] (h : k < n) (M : Independent n p k) (i : Fintype ↥(LinearMap.range (Matrix.vecMulLinear M.val)))
+   : @Fintype.card ↥(LinearMap.range (Matrix.vecMulLinear M.val)) i = p ^ k := by
+  have h₁ := cardinal_mk_eq_cardinal_mk_field_pow_rank (ZMod p) (LinearMap.range (Matrix.vecMulLinear M.val))
+  have h₂ : Cardinal.mk (ZMod p) = p := by rw [Cardinal.mk_fintype (ZMod p), ZMod.card p]
+  have h₃ := Cardinal.mk_fintype ↥(LinearMap.range (Matrix.vecMulLinear M.val))
+  have h₄ : Module.rank (ZMod p) ↥(LinearMap.range (Matrix.vecMulLinear M.val)) = k := sorry -- `Mᵀ.rank = M.rank`. Should be in Mathlib but isn't
+  rw [h₂, h₃, h₄, ←Cardinal.natCast_pow] at h₁
+  exact booi h₁
+
+lemma not_in_range_card {n p k : ℕ} [Fact p.Prime] (h : k < n) (M : Independent n p k) : Fintype.card (NotInRange M) = p ^ n - p ^ k := by
+  have h₀ : DecidablePred (λ v ↦ v ∈ LinearMap.range (Matrix.vecMulLinear M.val)) := Classical.decPred (λ v ↦ v ∈ LinearMap.range (Matrix.vecMulLinear M.val))
+  have h₁ : Fintype { x // (λ v ↦ v ∈ LinearMap.range (Matrix.vecMulLinear M.val)) x } := Subtype.fintype (λ v ↦ v ∈ LinearMap.range (Matrix.vecMulLinear M.val))
+  have h₃ := @Fintype.card_subtype_compl (Fin n → ZMod p) Pi.fintype (λ v ↦ v ∈ LinearMap.range M.val.vecMulLinear) h₁ instFintypeNotInRange
+  have h₄ : Fintype.card (Fin n → ZMod p) = p ^ n := by simp
+  have h₅ : Fintype.card ↥(LinearMap.range (Matrix.vecMulLinear M.val)) = p ^ k := range_card h M h₁
+  unfold NotInRange
+  rw [←h₄, ←h₅, ←h₃]
 
 lemma blah (n p k : ℕ) [pp : Fact p.Prime] : Fintype.card (Independent n p k.succ) = Fintype.card (Independent n p k) * (p ^ n - p ^ k) := by
   by_cases h : n > k
@@ -73,7 +91,7 @@ lemma blah (n p k : ℕ) [pp : Fact p.Prime] : Fintype.card (Independent n p k.s
       have h₃ := @Fintype.card_sigma (Independent n p k) (@NotInRange n p k pp) instFintypeIndependent λ i ↦ instFintypeNotInRange
       rw [←h₃]
       exact @Fintype.card_congr' (Sigma (@NotInRange n p k pp)) (Sigma (@NotInRange n p k pp)) h₁ Sigma.instFintype rfl
-    rw [Finset.sum_const_nat (λ M _ ↦ range_card M), Finset.card_univ] at h₂
+    rw [Finset.sum_const_nat (λ M _ ↦ not_in_range_card h M), Finset.card_univ] at h₂
     rw [←Fintype.ofEquiv_card (equiv_sigma n p k h), ←h₂]
     exact @Fintype.card_congr' (Sigma (@NotInRange n p k pp)) (Sigma (@NotInRange n p k pp)) (Fintype.ofEquiv (Independent n p (Nat.succ k)) (equiv_sigma n p k h)) h₁ rfl
   · have h₁ : n ≤ k := Nat.le_of_not_lt h
@@ -112,7 +130,7 @@ lemma Independent_card (n p k : ℕ) [Fact p.Prime] : Fintype.card (Independent 
 
 lemma max_rank_iff_invertible {n p : ℕ} [Fact p.Prime] (M : Matrix (Fin n) (Fin n) (ZMod p)) : MaxRank M ↔ IsUnit M := by
   apply Iff.intro <;> intro h
-  · admit
+  · admit -- An `n × n` matrix with rank `n` is invertible. Should be in Mathlib but isn't
   · unfold MaxRank
     rw [Matrix.rank_of_isUnit M h]
     exact Fintype.card_fin n
