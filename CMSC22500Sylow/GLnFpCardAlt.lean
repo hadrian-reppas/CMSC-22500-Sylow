@@ -13,10 +13,24 @@ noncomputable instance {n p k : ℕ} [Fact p.Prime] : Fintype (Independent n p k
   unfold Independent
   exact @Subtype.fintype (Fin k -> Fin n -> ZMod p) (@MaxRank n p k) MaxRankDec fintype_vecs
 
-
 def NotInRange {n p k : ℕ} [Fact p.Prime] (M : Independent n p k) := { v // v ∉ LinearMap.range M.val.vecMulLinear }
 
-lemma bleh (n p k : ℕ) [pp : Fact p.Prime] (h : k < n) : Independent n p k.succ ≃ Sigma (@NotInRange n p k pp) := sorry
+-- Given a matrix `M` and a vector `v` not in `M`'s range, this function adds `v` as a row to `M`
+def cons {n p k : ℕ} [Fact p.Prime] (M : Independent n p k) (v : NotInRange M) : Independent n p k.succ := sorry
+
+-- This removes the first row of `M`
+def tail {n p k : ℕ} (M : Independent n p k.succ) : Independent n p k := {
+  val := Matrix.vecTail M.val,
+  property := sorry,
+}
+
+-- This returns the first row of `M`, which will not be in the range of `tail M`
+def head {n p k : ℕ} [Fact p.Prime] (M : Independent n p k.succ) : NotInRange (tail M) := sorry
+
+def equiv_sigma_fun {n p k : ℕ} [pp : Fact p.Prime] {h : k < n} (M : Independent n p k.succ) : Sigma (@NotInRange n p k pp) := ⟨tail M, head M⟩
+def equiv_sigma_inv {n p k : ℕ} [pp : Fact p.Prime] {h : k < n} (q : Sigma (@NotInRange n p k pp)) : Independent n p k.succ := cons q.fst q.snd
+
+lemma equiv_sigma (n p k : ℕ) [pp : Fact p.Prime] (h : k < n) : Independent n p k.succ ≃ Sigma (@NotInRange n p k pp) := sorry
 
 noncomputable instance {n p k : ℕ} [Fact p.Prime] {M : Independent n p k} : Fintype (NotInRange M) := by
   unfold NotInRange
@@ -27,14 +41,14 @@ lemma range_card {n p k : ℕ} [Fact p.Prime] (M : Independent n p k) : Fintype.
 
 lemma blah (n p k : ℕ) [pp : Fact p.Prime] : Fintype.card (Independent n p k.succ) = Fintype.card (Independent n p k) * (p ^ n - p ^ k) := by
   by_cases h : n > k
-  · have h₁ := Fintype.ofEquiv (Independent n p (Nat.succ k)) (bleh n p k h)
+  · have h₁ := Fintype.ofEquiv (Independent n p (Nat.succ k)) (equiv_sigma n p k h)
     have h₂ : Fintype.card (Sigma (@NotInRange n p k pp)) = Finset.univ.sum λ (M : Independent n p k) ↦ Fintype.card (NotInRange M) := by
       have h₃ := @Fintype.card_sigma (Independent n p k) (@NotInRange n p k pp) instFintypeIndependent λ i ↦ instFintypeNotInRange
       rw [←h₃]
       exact @Fintype.card_congr' (Sigma (@NotInRange n p k pp)) (Sigma (@NotInRange n p k pp)) h₁ Sigma.instFintype rfl
     rw [Finset.sum_const_nat (λ M _ ↦ range_card M), Finset.card_univ] at h₂
-    rw [←Fintype.ofEquiv_card (bleh n p k h), ←h₂]
-    exact @Fintype.card_congr' (Sigma (@NotInRange n p k pp)) (Sigma (@NotInRange n p k pp)) (Fintype.ofEquiv (Independent n p (Nat.succ k)) (bleh n p k h)) h₁ rfl
+    rw [←Fintype.ofEquiv_card (equiv_sigma n p k h), ←h₂]
+    exact @Fintype.card_congr' (Sigma (@NotInRange n p k pp)) (Sigma (@NotInRange n p k pp)) (Fintype.ofEquiv (Independent n p (Nat.succ k)) (equiv_sigma n p k h)) h₁ rfl
   · have h₁ : n ≤ k := Nat.le_of_not_lt h
     have h₂ : p ^ n - p ^ k = 0 := by
       refine Nat.sub_eq_zero_of_le ?h
